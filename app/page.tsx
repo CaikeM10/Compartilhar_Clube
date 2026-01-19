@@ -22,21 +22,28 @@ export default function HomePage() {
             <ScrollAnimation animation="fade-up">
               <div className="text-white">
                 {/* Logo */}
-                <div className="mb-8 flex justify-center md:justify-start">
-                  <Image
-                    src="/logoo.png"
-                    alt="Compartilhar Clube"
-                    width={120}
-                    height={120}
-                    className="drop-shadow-lg"
-                  />
+                {/* Logo do Hero */}
+                <div className="mb-10 flex justify-center md:justify-start">
+                  <div className="relative w-32 h-32 md:w-36 md:h-36 transition-transform duration-500 hover:scale-[1.03]">
+                    <Image
+                      src="/logoo.png"
+                      alt="Compartilhar Clube"
+                      fill
+                      className="object-contain drop-shadow-lg"
+                      priority
+                    />
+                  </div>
                 </div>
 
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 font-display text-balance leading-tight">
-                  Transforme sua prática profissional com conhecimento
-                  compartilhado
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 font-display leading-tight text-balance">
+                  Transforme sua prática profissional
+                  <br />
+                  <span className="text-accent">
+                    com conhecimento compartilhado
+                  </span>
                 </h1>
-                <p className="text-lg md:text-xl mb-8 text-white/90 leading-relaxed text-pretty">
+
+                <p className="text-lg md:text-xl mb-6 text-white/90 leading-relaxed max-w-xl">
                   Junte-se a uma comunidade de educadores e profissionais da
                   saúde mental dedicados ao crescimento, aprendizado e trocas
                   significativas.
@@ -44,11 +51,14 @@ export default function HomePage() {
                 <Button
                   asChild
                   size="lg"
-                  className="bg-accent hover:bg-accent-dark text-primary font-bold text-lg px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition-all group"
+                  className="bg-accent hover:bg-accent-dark text-primary font-bold text-lg px-10 py-4 rounded-full shadow-lg hover:shadow-xl transition-all group"
                 >
-                  <Link href="#planos" className="flex items-center gap-2">
-                    <Brain className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  <Link
+                    href="#planos"
+                    className="flex items-center gap-2 group"
+                  >
                     Faça parte do clube
+                    <Brain className="w-5 h-5 transition-transform group-hover:scale-110" />
                   </Link>
                 </Button>
               </div>
@@ -57,7 +67,10 @@ export default function HomePage() {
             {/* Right Side - Photo */}
             <ScrollAnimation animation="fade-up" delay={200}>
               <div className="relative">
-                <div className="relative w-full max-w-md mx-auto aspect-square rounded-2xl overflow-hidden shadow-2xl border-4 border-accent/30">
+                <div
+                  className="relative w-full max-w-md mx-auto aspect-square rounded-2xl overflow-hidden shadow-xl border border-white/10
+                    transition-transform duration-700 ease-out hover:scale-[1.02]"
+                >
                   <Image
                     src="/descriptionWesley.jpg"
                     alt="Psicólogo Wesley Marques"
@@ -66,8 +79,9 @@ export default function HomePage() {
                     priority
                   />
                 </div>
-                {/* Decorative element */}
-                <div className="absolute -bottom-4 -right-4 w-32 h-32 bg-accent/20 rounded-full blur-3xl -z-10" />
+
+                {/* Glow sutil */}
+                <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-accent/20 rounded-full blur-3xl -z-10" />
               </div>
             </ScrollAnimation>
           </div>
@@ -190,46 +204,37 @@ export default function HomePage() {
           </ScrollAnimation>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {/* Plano Mensal */}
+            {/* ================= PLANO MENSAL ================= */}
             <ScrollAnimation animation="scale" delay={100}>
-              <Card className="p-8 hover:shadow-xl transition-all relative overflow-hidden h-full flex flex-col">
+              <Card className="p-8 hover:shadow-xl transition-all h-full flex flex-col">
                 <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-primary mb-2 font-display">
+                  <h3 className="text-2xl font-bold text-primary mb-4 font-display">
                     Mensal
                   </h3>
-                  <div className="mb-6">
+
+                  <div className="flex items-baseline gap-1 mb-6">
                     <span className="text-4xl font-bold text-primary">
-                      R$ 49
+                      R$ 59
                     </span>
-                    <span className="text-muted-foreground">/mês</span>
+                    <span className="text-sm text-muted-foreground">/mês</span>
                   </div>
+
                   <ul className="space-y-3 mb-8">
-                    <li className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">
-                        Acesso a todas as aulas
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">
-                        Recursos em PDF
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">
-                        Comunidade exclusiva
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">
-                        Certificado de participação
-                      </span>
-                    </li>
+                    {[
+                      "Acesso a todas as aulas",
+                      "Recursos em PDF",
+                      "Clube exclusivo",
+                      "Acesso ao grupo VIP do WhatsApp",
+                      "1 supervisão em grupo",
+                    ].map((item, i) => (
+                      <li key={i} className="flex gap-2">
+                        <Check className="w-5 h-5 text-accent mt-0.5" />
+                        <span className="text-muted-foreground">{item}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
+
                 <Button
                   asChild
                   className="w-full bg-primary hover:bg-primary/90 text-white rounded-full"
@@ -239,122 +244,105 @@ export default function HomePage() {
               </Card>
             </ScrollAnimation>
 
-            {/* Plano Trimestral - Destaque */}
+            {/* ================= PLANO TRIMESTRAL ================= */}
             <ScrollAnimation animation="scale" delay={200}>
-              <Card className="p-8 hover:shadow-xl transition-all relative overflow-hidden border-2 border-accent h-full flex flex-col">
+              <Card className="p-8 border-2 border-accent hover:shadow-xl transition-all relative h-full flex flex-col">
                 <div className="absolute top-0 right-0 bg-accent text-primary text-xs font-bold px-3 py-1 rounded-bl-lg">
                   POPULAR
                 </div>
+
                 <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-primary mb-2 font-display">
+                  <h3 className="text-2xl font-bold text-primary mb-4 font-display">
                     Trimestral
                   </h3>
-                  <div className="mb-2">
+
+                  <div className="flex items-baseline gap-2 mb-1">
                     <span className="text-4xl font-bold text-primary">
-                      R$ 129
+                      R$ 139
                     </span>
-                    <span className="text-muted-foreground">/3 meses</span>
+                    <span className="text-sm text-muted-foreground">
+                      (49,90/mês)
+                    </span>
                   </div>
-                  <p className="text-sm text-accent font-semibold mb-6">
-                    Economize R$ 18
+                  <span className="text-xs text-muted-foreground">3 meses</span>
+
+                  <p className="text-sm text-accent font-semibold mt-4 mb-6">
+                    Economize R$ 38
                   </p>
+
                   <ul className="space-y-3 mb-8">
-                    <li className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">
-                        Acesso a todas as aulas
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">
-                        Recursos em PDF
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">
-                        Comunidade exclusiva
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">
-                        Certificado de participação
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground font-semibold">
-                        1 supervisão em grupo
-                      </span>
-                    </li>
+                    {[
+                      "Acesso a todas as aulas",
+                      "Recursos em PDF",
+                      "Clube exclusivo",
+                      "Acesso ao Grupo VIP no WhatsApp",
+                      "Supervisão em grupo",
+                      "1 supervisão individual",
+                    ].map((item, i) => (
+                      <li key={i} className="flex gap-2">
+                        <Check className="w-5 h-5 text-accent mt-0.5" />
+                        <span
+                          className={`text-muted-foreground ${
+                            item.includes("individual") && "font-semibold"
+                          }`}
+                        >
+                          {item}
+                        </span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
+
                 <Button
                   asChild
-                  className="w-full bg-accent hover:bg-accent-dark text-primary rounded-full font-bold"
+                  className="w-full bg-accent hover:bg-accent/90 text-primary rounded-full font-bold"
                 >
                   <Link href="/clube">Assinar agora</Link>
                 </Button>
               </Card>
             </ScrollAnimation>
 
-            {/* Plano Anual */}
+            {/* ================= PLANO ANUAL ================= */}
             <ScrollAnimation animation="scale" delay={300}>
-              <Card className="p-8 hover:shadow-xl transition-all relative overflow-hidden h-full flex flex-col">
+              <Card className="p-8 hover:shadow-xl transition-all h-full flex flex-col">
                 <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-primary mb-2 font-display">
+                  <h3 className="text-2xl font-bold text-primary mb-4 font-display">
                     Anual
                   </h3>
-                  <div className="mb-2">
+
+                  <div className="flex items-baseline gap-2 mb-1">
                     <span className="text-4xl font-bold text-primary">
-                      R$ 449
+                      R$ 499
                     </span>
-                    <span className="text-muted-foreground">/ano</span>
+                    <span className="text-sm text-muted-foreground">
+                      (39,90/mês)
+                    </span>
                   </div>
-                  <p className="text-sm text-accent font-semibold mb-6">
-                    Economize R$ 139
+                  <span className="text-xs text-muted-foreground">ano</span>
+
+                  <p className="text-sm text-accent font-semibold mt-4 mb-6">
+                    Economize R$ 209
                   </p>
+
                   <ul className="space-y-3 mb-8">
-                    <li className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">
-                        Acesso a todas as aulas
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">
-                        Recursos em PDF
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">
-                        Comunidade exclusiva
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground">
-                        Certificado de participação
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground font-semibold">
-                        4 supervisões em grupo
-                      </span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Check className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
-                      <span className="text-muted-foreground font-semibold">
-                        Suporte prioritário
-                      </span>
-                    </li>
+                    {[
+                      "Acesso a todas as aulas",
+                      "Recursos em PDF",
+                      "Clube exclusivo",
+                      "Acesso ao Grupo VIP no WhatsApp",
+                      "Supervisão em grupo",
+                      "4 supervisões em grupo",
+                    ].map((item, i) => (
+                      <li key={i} className="flex gap-2">
+                        <Check className="w-5 h-5 text-accent mt-0.5" />
+                        <span className="text-muted-foreground font-semibold">
+                          {item}
+                        </span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
+
                 <Button
                   asChild
                   className="w-full bg-primary hover:bg-primary/90 text-white rounded-full"
@@ -440,38 +428,35 @@ export default function HomePage() {
                     </div>
                     <div className="space-y-4 text-muted-foreground leading-relaxed">
                       <p>
-                        Com ampla experiência na educação e psicologia, Wesley
-                        Marques dedica sua carreira à{" "}
-                        <strong className="text-primary">
-                          infância, inclusão e alfabetização
-                        </strong>
-                        .
+                        Olá, como vai? É um prazer ter você aqui conosco. Antes
+                        de tudo, deixa eu me apresentar. Me chamo Wesley
+                        Marques, sou cearense, nordestino, apaixonado por forró
+                        e fã da Yara Tchê. Sou Pedagogo, Psicólogo (CRP
+                        11/23403) e Psicopedagogo Institucional e Clínico.
+                        Também sou Especialista em Educação Inclusiva e
+                        Mestrando em Educação Inclusiva pelo Instituto Federal
+                        de Educação, Ciência e Tecnologia do Ceará (IFCE) .
                       </p>
                       <p>
-                        Atuando na{" "}
-                        <strong className="text-primary">
-                          educação pública
-                        </strong>{" "}
-                        e em consultório clínico, ele acredita profundamente no
-                        poder do{" "}
-                        <strong className="text-primary">
-                          conhecimento compartilhado
-                        </strong>{" "}
-                        e na importância da{" "}
-                        <strong className="text-primary">
-                          formação ética e continuada
-                        </strong>{" "}
-                        de profissionais que trabalham com crianças e
-                        adolescentes.
+                        Atuo como professor da rede pública municipal em
+                        municípios do estado do Ceará, vivenciando diariamente
+                        os desafios e as potências da educação pública e dos
+                        contextos escolares inclusivos. <br></br>
+                        <br></br>Sou apaixonado pela infância, pela inclusão,
+                        pela alfabetização e pelo estudo dos transtornos do
+                        neurodesenvolvimento. Acredito profundamente no poder do
+                        conhecimento compartilhado, das trocas significativas e
+                        da formação de profissionais comprometidos, éticos e
+                        sensíveis às singularidades humanas.
                       </p>
                       <p>
-                        O{" "}
                         <strong className="text-primary">
-                          Compartilhar Clube
+                          Compartilhar saberes,
                         </strong>{" "}
-                        nasce dessa paixão: criar um espaço onde{" "}
+                        aprender com o outro e contribuir com a formação{" "}
                         <strong className="text-primary">
-                          afeto, aprendizado e colaboração
+                          de pessoas são partes essenciais da minha trajetória
+                          profissional e pessoal.
                         </strong>{" "}
                         se encontram para transformar práticas e vidas.
                       </p>

@@ -9,103 +9,108 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white border-b border-border shadow-sm">
+    <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur border-b border-border/60 shadow-sm">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-20">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-primary">
-              <img src="/logoo.png" alt="Logo" className="w-8 h-8" />
+        <div className="flex items-center justify-between h-20 md:h-24">
+          {/* LOGO */}
+          <Link href="/" className="flex items-center gap-4">
+            <div className="flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-full bg-white shadow-md border border-border/40 overflow-hidden">
+              <img
+                src="/logo.png"
+                alt="Compartilhar Clube"
+                className="w-full h-full object-cover scale-100"
+              />
             </div>
-            <div className="hidden md:block">
-              <span className="text-xl font-bold text-primary font-display">
-                Compartilhar Clube
-              </span>
-            </div>
+
+            <span className="hidden md:block text-xl md:text-2xl font-semibold text-primary tracking-tight font-display">
+              Compartilhar Clube
+            </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
+          {/* DESKTOP NAV */}
+          <nav className="hidden md:flex items-center gap-10">
             <Link
               href="/"
-              className="text-foreground hover:text-primary transition-colors font-medium"
+              className="text-base font-medium text-foreground hover:text-primary transition-colors"
             >
               Início
             </Link>
             <Link
               href="/recursos"
-              className="text-foreground hover:text-primary transition-colors font-medium"
+              className="text-base font-medium text-foreground hover:text-primary transition-colors"
             >
               Recursos
             </Link>
             <Link
               href="/clube"
-              className="text-foreground hover:text-primary transition-colors font-medium"
+              className="text-base font-medium text-foreground hover:text-primary transition-colors"
             >
               Clube de Assinatura
             </Link>
             <Link
               href="/contato"
-              className="text-foreground hover:text-primary transition-colors font-medium"
+              className="text-base font-medium text-foreground hover:text-primary transition-colors"
             >
               Fale Conosco
             </Link>
           </nav>
 
-          {/* CTA Button */}
+          {/* CTA DESKTOP */}
           <div className="hidden md:block">
             <Button
               asChild
-              className="bg-accent hover:bg-accent-dark text-primary font-semibold rounded-full px-6"
+              className="bg-accent text-primary font-semibold text-base rounded-full px-8 py-3 shadow-md hover:shadow-lg hover:scale-[1.05] transition-all"
             >
               <Link href="/login">Acessar Plataforma</Link>
             </Button>
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* MOBILE MENU BUTTON */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 text-primary hover:bg-muted rounded-lg transition-colors"
+            className="md:hidden p-2 rounded-lg text-primary hover:bg-muted transition"
+            aria-label="Abrir menu"
           >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            {isMenuOpen ? <X size={26} /> : <Menu size={26} />}
           </button>
         </div>
 
-        {/* Mobile Menu */}
+        {/* MOBILE MENU */}
         {isMenuOpen && (
-          <nav className="md:hidden py-4 border-t border-border">
-            <div className="flex flex-col gap-4">
+          <nav className="md:hidden py-6 border-t border-border/60">
+            <div className="flex flex-col gap-5">
               <Link
                 href="/"
-                className="text-foreground hover:text-primary transition-colors font-medium py-2"
                 onClick={() => setIsMenuOpen(false)}
+                className="text-lg font-medium text-foreground hover:text-primary transition-colors"
               >
                 Início
               </Link>
               <Link
                 href="/recursos"
-                className="text-foreground hover:text-primary transition-colors font-medium py-2"
                 onClick={() => setIsMenuOpen(false)}
+                className="text-lg font-medium text-foreground hover:text-primary transition-colors"
               >
                 Recursos
               </Link>
               <Link
                 href="/clube"
-                className="text-foreground hover:text-primary transition-colors font-medium py-2"
                 onClick={() => setIsMenuOpen(false)}
+                className="text-lg font-medium text-foreground hover:text-primary transition-colors"
               >
                 Clube de Assinatura
               </Link>
               <Link
                 href="/contato"
-                className="text-foreground hover:text-primary transition-colors font-medium py-2"
                 onClick={() => setIsMenuOpen(false)}
+                className="text-lg font-medium text-foreground hover:text-primary transition-colors"
               >
                 Fale Conosco
               </Link>
+
               <Button
                 asChild
-                className="bg-accent hover:bg-accent-dark text-primary font-semibold rounded-full mt-2"
+                className="bg-accent text-primary font-semibold text-base rounded-full mt-4 py-3 shadow-md hover:shadow-lg transition"
               >
                 <Link href="/login">Acessar Plataforma</Link>
               </Button>

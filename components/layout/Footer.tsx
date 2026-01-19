@@ -9,16 +9,21 @@ export function Footer() {
           {/* About */}
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-accent">
-                <img src="/logoo.png" alt="Logo" className="w-6 h-6" />
-              </div>
+              {/* Logo igual ao header */}
+              <img
+                src="/logo.png"
+                alt="Compartilhar Clube"
+                className="h-12 w-auto"
+              />
               <span className="text-lg font-bold font-display">
                 Compartilhar Clube
               </span>
             </div>
+
             <p className="text-white/80 leading-relaxed">
               Uma comunidade de aprendizagem, troca e formação continuada para
-              profissionais da educação e saúde mental.
+              profissionais da educação e da saúde mental, com foco em
+              crescimento e prática profissional.
             </p>
           </div>
 
@@ -38,18 +43,18 @@ export function Footer() {
               </li>
               <li>
                 <Link
-                  href="/recursos"
-                  className="text-white/80 hover:text-accent transition-colors"
-                >
-                  Recursos
-                </Link>
-              </li>
-              <li>
-                <Link
                   href="/clube"
                   className="text-white/80 hover:text-accent transition-colors"
                 >
                   Clube de Assinatura
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/recursos"
+                  className="text-white/80 hover:text-accent transition-colors"
+                >
+                  Recursos
                 </Link>
               </li>
               <li>
@@ -70,30 +75,32 @@ export function Footer() {
               <li className="flex items-center gap-3 text-white/80">
                 <Mail size={20} className="text-accent" />
                 <a
-                  href="mailto:contato@compartilharclube.com.br"
+                  href="mailto:compartilharclube@gmail.com"
                   className="hover:text-accent transition-colors"
                 >
-                  contato@compartilharclube.com.br
+                  compartilharclube@gmail.com
                 </a>
               </li>
+
               <li className="flex items-center gap-3 text-white/80">
                 <Phone size={20} className="text-accent" />
                 <a
-                  href="https://wa.me/5511999999999"
-                  className="hover:text-accent transition-colors"
+                  href="https://wa.me/558592483382"
                   target="_blank"
                   rel="noopener noreferrer"
+                  className="hover:text-accent transition-colors"
                 >
-                  (11) 99999-9999
+                  (85) 92483-382
                 </a>
               </li>
+
               <li className="flex items-center gap-3 text-white/80">
                 <Instagram size={20} className="text-accent" />
                 <a
-                  href="https://instagram.com/compartilharclube"
-                  className="hover:text-accent transition-colors"
+                  href="https://www.instagram.com/compartilharclube"
                   target="_blank"
                   rel="noopener noreferrer"
+                  className="hover:text-accent transition-colors"
                 >
                   @compartilharclube
                 </a>
@@ -102,10 +109,24 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-white/20 mt-8 pt-8 text-center text-white/60 text-sm">
+        {/* Bottom */}
+        <div className="border-t border-white/20 mt-10 pt-6 text-center text-white/60 text-sm space-y-2">
           <p>
             © {new Date().getFullYear()} Compartilhar Clube. Todos os direitos
             reservados.
+          </p>
+
+          <p>
+            Desenvolvido por{" "}
+            <a
+              href="https://www.caikemarinho.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-accent hover:underline font-medium"
+            >
+              Caike Marinho
+            </a>{" "}
+            | Soluções Web Profissionais.
           </p>
         </div>
       </div>

@@ -1,8 +1,8 @@
-import { MemberLayout } from "@/components/layout/MemberLayout"
-import { ProtectedRoute } from "@/components/ProtectedRoute"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { FileText, Download, Lock } from "lucide-react"
+import { MemberLayout } from "@/components/layout/MemberLayout";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { FileText, Download, Lock } from "lucide-react";
 
 export default function RecursosPage() {
   const recursos = [
@@ -51,57 +51,92 @@ export default function RecursosPage() {
       hasAccess: false,
       locked: true,
     },
-  ]
+  ];
 
   return (
     <ProtectedRoute>
       <MemberLayout>
-        <div className="space-y-8">
+        <div className="space-y-10">
+          {/* Header */}
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2 font-display">
               Recursos do Compartilhar Clube
             </h1>
-            <p className="text-muted-foreground text-lg">Materiais práticos em PDF prontos para download e uso</p>
+            <p className="text-lg text-muted-foreground">
+              Materiais práticos em PDF prontos para download e uso profissional
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Grid */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {recursos.map((recurso) => (
-              <Card key={recurso.id} className="p-6 hover:shadow-lg transition-shadow flex flex-col">
-                <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-4">
-                  {recurso.locked ? (
-                    <Lock className="w-6 h-6 text-muted-foreground" />
-                  ) : (
-                    <FileText className="w-6 h-6 text-accent" />
+              <Card
+                key={recurso.id}
+                className={`relative p-6 flex flex-col rounded-2xl border transition-all duration-300
+                  ${
+                    recurso.locked || !recurso.hasAccess
+                      ? "bg-muted/40 border-border"
+                      : "bg-background border-border hover:-translate-y-1 hover:shadow-xl"
+                  }
+                `}
+              >
+                {/* Top */}
+                <div className="flex items-center justify-between mb-5">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-accent/10">
+                    {recurso.locked || !recurso.hasAccess ? (
+                      <Lock className="w-6 h-6 text-muted-foreground" />
+                    ) : (
+                      <FileText className="w-6 h-6 text-accent" />
+                    )}
+                  </div>
+
+                  {recurso.locked && (
+                    <span className="text-xs font-medium px-3 py-1 rounded-full bg-muted text-muted-foreground">
+                      Em breve
+                    </span>
+                  )}
+
+                  {!recurso.hasAccess && !recurso.locked && (
+                    <span className="text-xs font-medium px-3 py-1 rounded-full bg-destructive/10 text-destructive">
+                      Requer assinatura
+                    </span>
                   )}
                 </div>
 
-                <h3 className="text-lg font-semibold text-primary mb-2 font-display">{recurso.title}</h3>
-                <p className="text-sm text-muted-foreground mb-4 flex-1">{recurso.description}</p>
+                {/* Content */}
+                <h3 className="text-lg font-semibold text-primary mb-2 font-display leading-snug">
+                  {recurso.title}
+                </h3>
 
-                <div className="text-xs text-muted-foreground mb-4">
-                  <span className="uppercase font-semibold">PDF</span> • {recurso.pages} páginas
+                <p className="text-sm text-muted-foreground mb-5 flex-1 leading-relaxed">
+                  {recurso.description}
+                </p>
+
+                {/* Meta */}
+                <div className="flex items-center justify-between text-xs text-muted-foreground mb-6">
+                  <span className="uppercase font-semibold tracking-wide">
+                    PDF
+                  </span>
+                  <span>{recurso.pages} páginas</span>
                 </div>
 
-                {recurso.locked && (
-                  <div className="mb-3 inline-flex items-center gap-2 bg-muted px-3 py-1.5 rounded-full text-sm text-muted-foreground">
-                    <Lock className="w-4 h-4" />
-                    <span>Disponível em breve</span>
-                  </div>
-                )}
-
-                {!recurso.hasAccess && (
-                  <div className="mb-3 inline-flex items-center gap-2 bg-destructive/10 px-3 py-1.5 rounded-full text-sm text-destructive">
-                    <Lock className="w-4 h-4" />
-                    <span>Requer assinatura</span>
-                  </div>
-                )}
-
+                {/* Action */}
                 <Button
                   disabled={recurso.locked || !recurso.hasAccess}
-                  className="w-full bg-accent hover:bg-accent-dark text-primary font-semibold rounded-full"
+                  className={`w-full rounded-full font-semibold transition-all
+                    ${
+                      recurso.locked || !recurso.hasAccess
+                        ? "bg-muted text-muted-foreground cursor-not-allowed"
+                        : "bg-accent hover:bg-accent-dark text-primary shadow-md hover:shadow-lg"
+                    }
+                  `}
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  {recurso.locked ? "Em breve" : recurso.hasAccess ? "Baixar PDF" : "Assinar para acessar"}
+                  {recurso.locked
+                    ? "Disponível em breve"
+                    : recurso.hasAccess
+                      ? "Baixar PDF"
+                      : "Assinar para acessar"}
                 </Button>
               </Card>
             ))}
@@ -109,5 +144,5 @@ export default function RecursosPage() {
         </div>
       </MemberLayout>
     </ProtectedRoute>
-  )
+  );
 }
