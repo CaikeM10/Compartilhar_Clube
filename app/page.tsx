@@ -385,6 +385,118 @@ export default function HomePage() {
       </section>
 
       <SectionDivider variant="gradient" />
+      {/* ================= MATERIAIS AVULSOS ================= */}
+      <section className="relative py-24 bg-background overflow-hidden">
+        <Container>
+          <ScrollAnimation animation="fade-up">
+            <div className="text-center mb-14">
+              <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4 font-display">
+                Materiais avulsos
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                Prefere adquirir apenas um material específico? Recursos prontos
+                em PDF para uso imediato, sem assinatura.
+              </p>
+            </div>
+          </ScrollAnimation>
+
+          {/* CARROSSEL */}
+          <ScrollAnimation animation="fade-up" delay={150}>
+            <div className="relative">
+              <div className="flex gap-8 animate-materials-scroll hover:[animation-play-state:paused]">
+                {[
+                  {
+                    title: "Marmita da Leitura",
+                    image: "/marmitadaleitura.jpg",
+                  },
+                  {
+                    title: "Caçadores de Palavras",
+                    image: "/caçadoresdepalavras.jpg",
+                  },
+                  {
+                    title: "Arraiá da Alfabetização",
+                    image: "/arraiádaalfabetização.jpg",
+                  },
+                  {
+                    title: "Leitores de Palavras",
+                    image: "/leitoresdepalavrs.jpg",
+                  },
+                  { title: "Mood Kids", image: "/mood_kids.jpg" },
+                  {
+                    title: "Não aceitamos fiado",
+                    image: "/termêmetrodasemoções.jpg",
+                  },
+                  { title: "Pipoca com Rima", image: "/pipocacomrima.jpg" },
+                  {
+                    title: "Jogo da Memória das Emoções",
+                    image: "/jogofamemória.jpg",
+                  },
+                  {
+                    title: "Intruso – Letra Inicial",
+                    image: "/letrasiguais.jpg",
+                  },
+                  { title: "Varal Literário", image: "/varalliterário.jpg" },
+                ].map((item, index) => (
+                  <a
+                    key={index}
+                    href="/materiais"
+                    className="min-w-[260px] bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all group border border-border/60"
+                  >
+                    {/* IMAGEM */}
+                    <div className="relative h-[330px] overflow-hidden">
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
+                    </div>
+
+                    {/* TEXTO */}
+                    <div className="p-5">
+                      <h3 className="font-semibold text-primary text-lg text-center">
+                        {item.title}
+                      </h3>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </ScrollAnimation>
+
+          {/* CTA */}
+          <ScrollAnimation animation="fade-up" delay={300}>
+            <div className="mt-16 text-center">
+              <Button
+                asChild
+                size="lg"
+                className="bg-gradient-to-r from-accent to-[#f3c969] hover:brightness-110 text-primary font-bold px-10 py-6 rounded-full shadow-xl"
+              >
+                <Link href="/materiais">Explorar materiais individuais</Link>
+              </Button>
+            </div>
+          </ScrollAnimation>
+        </Container>
+
+        {/* ONDA / DIVISOR */}
+        <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none">
+          <svg
+            viewBox="0 0 1200 120"
+            preserveAspectRatio="none"
+            className="w-full h-24"
+          >
+            <path
+              d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,
+        70.36-5.37,136.33-33.31,206.8-37.5
+        C438.64,32.43,512.34,53.67,583,72.05
+        c69.27,18,138.3,24.88,209.4,13.08
+        36.15-6,69.85-17.84,104.45-29.34
+        C989.49,25,1113-14.29,1200,52.47V0Z"
+              className="fill-muted"
+            />
+          </svg>
+        </div>
+      </section>
 
       {/* Quem criou o clube */}
       <section className="py-20 bg-background">
