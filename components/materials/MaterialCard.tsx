@@ -57,7 +57,7 @@ export function MaterialCard({
           className="bg-accent hover:bg-accent-dark text-primary rounded-full"
         >
           <a href={canvaUrl} target="_blank" rel="noopener noreferrer">
-            Acessar no Canva
+            Acessar no PDF
             <ExternalLink className="w-4 h-4 ml-2" />
           </a>
         </Button>

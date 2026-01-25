@@ -417,10 +417,7 @@ export default function HomePage() {
                     title: "Arraiá da Alfabetização",
                     image: "/arraiádaalfabetização.jpg",
                   },
-                  {
-                    title: "Leitores de Palavras",
-                    image: "/leitoresdepalavrs.jpg",
-                  },
+
                   { title: "Mood Kids", image: "/mood_kids.jpg" },
                   {
                     title: "Não aceitamos fiado",
