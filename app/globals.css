@@ -296,16 +296,15 @@
 .animate-float {
   animation: float 4s ease-in-out infinite;
 }
-
 @keyframes materials-scroll {
-  0% {
+  from {
     transform: translateX(0);
   }
-  100% {
+  to {
     transform: translateX(-50%);
   }
 }
 
 .animate-materials-scroll {
-  animation: materials-scroll 50s linear infinite;
+  animation: materials-scroll 45s linear infinite;
 }

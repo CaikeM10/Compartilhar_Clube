@@ -72,7 +72,7 @@ export default function HomePage() {
                     transition-transform duration-700 ease-out hover:scale-[1.02]"
                 >
                   <Image
-                    src="/descriptionWesley.jpg"
+                    src="/imagem_principal.webp"
                     alt="Psicólogo Wesley Marques"
                     fill
                     className="object-cover"
@@ -375,23 +375,24 @@ export default function HomePage() {
                 className="bg-accent hover:bg-accent-dark text-primary font-bold text-lg px-8 py-6 rounded-full shadow-lg group"
               >
                 <Link href="#planos" className="flex items-center gap-2">
-                  <Brain className="w-5 h-5 group-hover:scale-110 transition-transform" />
                   Quero fazer parte
+                  <Brain className="w-5 h-5 group-hover:scale-110 transition-transform" />
                 </Link>
               </Button>
             </div>
           </ScrollAnimation>
         </Container>
       </section>
-
       <SectionDivider variant="gradient" />
+
       {/* ================= MATERIAIS AVULSOS ================= */}
       <section className="relative py-24 bg-background overflow-hidden">
         <Container>
+          {/* TÍTULO */}
           <ScrollAnimation animation="fade-up">
             <div className="text-center mb-14">
               <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4 font-display">
-                Materiais avulsos
+                Materiais Individuais
               </h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
                 Prefere adquirir apenas um material específico? Recursos prontos
@@ -400,68 +401,75 @@ export default function HomePage() {
             </div>
           </ScrollAnimation>
 
-          {/* CARROSSEL */}
+          {/* ================= CARROSSEL ================= */}
           <ScrollAnimation animation="fade-up" delay={150}>
-            <div className="relative">
-              <div className="flex gap-8 animate-materials-scroll hover:[animation-play-state:paused]">
-                {[
+            <div className="relative overflow-hidden">
+              {(() => {
+                const materials = [
                   {
                     title: "Marmita da Leitura",
-                    image: "/marmitadaleitura.jpg",
+                    image: "/marmitadaleitura.webp",
                   },
                   {
                     title: "Caçadores de Palavras",
-                    image: "/caçadoresdepalavras.jpg",
+                    image: "/caçadoresdepalavras.webp",
                   },
+                  { title: "Arraiá da Alfabetização", image: "/arraiá.webp" },
+                  { title: "Mood Kids", image: "/moodkids.webp" },
+                  { title: "Varal Literário", image: "/varalliterário.webp" },
+                  { title: "Pipoca com Rima", image: "/pipocacomrima.webp" },
                   {
-                    title: "Arraiá da Alfabetização",
-                    image: "/arraiádaalfabetização.jpg",
+                    title: "Jogo da Memória Com Alfabeto",
+                    image: "/jogodamemória.webp",
                   },
-
-                  { title: "Mood Kids", image: "/mood_kids.jpg" },
+                  { title: "Letras Iguais", image: "/letrasiguais.webp" },
                   {
                     title: "Não aceitamos fiado",
-                    image: "/termêmetrodasemoções.jpg",
+                    image: "/não_aceitamos_fiado.webp",
                   },
-                  { title: "Pipoca com Rima", image: "/pipocacomrima.jpg" },
+                  { title: "Varal Literário", image: "/varalliterário.webp" },
                   {
-                    title: "Jogo da Memória das Emoções",
-                    image: "/jogofamemória.jpg",
+                    title: "Aprendendo Felicidade",
+                    image: "/aprendendofelicidade.webp",
                   },
-                  {
-                    title: "Intruso – Letra Inicial",
-                    image: "/letrasiguais.jpg",
-                  },
-                  { title: "Varal Literário", image: "/varalliterário.jpg" },
-                ].map((item, index) => (
-                  <a
-                    key={index}
-                    href="/materiais"
-                    className="min-w-[260px] bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all group border border-border/60"
-                  >
-                    {/* IMAGEM */}
-                    <div className="relative h-[330px] overflow-hidden">
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
-                    </div>
+                ];
 
-                    {/* TEXTO */}
-                    <div className="p-5">
-                      <h3 className="font-semibold text-primary text-lg text-center">
-                        {item.title}
-                      </h3>
-                    </div>
-                  </a>
-                ))}
-              </div>
+                const infiniteMaterials = [...materials, ...materials];
+
+                return (
+                  <div className="flex gap-8 animate-materials-scroll hover:[animation-play-state:paused]">
+                    {infiniteMaterials.map((item, index) => (
+                      <a
+                        key={index}
+                        href="/materiais"
+                        className="min-w-[260px] bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all group border border-border/60"
+                      >
+                        {/* IMAGEM */}
+                        <div className="relative h-[330px] overflow-hidden">
+                          <img
+                            src={item.image}
+                            alt={item.title}
+                            loading="lazy"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
+                        </div>
+
+                        {/* TEXTO */}
+                        <div className="p-5">
+                          <h3 className="font-semibold text-primary text-lg text-center">
+                            {item.title}
+                          </h3>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           </ScrollAnimation>
 
-          {/* CTA */}
+          {/* ================= CTA ================= */}
           <ScrollAnimation animation="fade-up" delay={300}>
             <div className="mt-16 text-center">
               <Button
@@ -475,7 +483,7 @@ export default function HomePage() {
           </ScrollAnimation>
         </Container>
 
-        {/* ONDA / DIVISOR */}
+        {/* ================= ONDA / DIVISOR ================= */}
         <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none">
           <svg
             viewBox="0 0 1200 120"
@@ -501,7 +509,7 @@ export default function HomePage() {
           <ScrollAnimation animation="fade-up">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4 font-display">
-                Quem criou o Compartilhar Clube
+                Quem criou o Compartilhar Clube ?
               </h2>
             </div>
           </ScrollAnimation>
@@ -511,11 +519,11 @@ export default function HomePage() {
               <Card className="p-8 md:p-12 border-2 shadow-lg">
                 <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
                   {/* Photo */}
-                  <div className="flex-shrink-0">
-                    <div className="w-48 h-48 rounded-full overflow-hidden bg-gradient-to-br from-primary to-secondary p-1">
+                  <div className="shrink-0">
+                    <div className="w-48 h-48 rounded-full overflow-hidden bg-linear-to-br from-primary to-secondary p-1">
                       <div className="w-full h-full rounded-full overflow-hidden bg-muted flex items-center justify-center">
                         <Image
-                          src="/descriptionWesley.jpg"
+                          src="/imagem_principal.webp"
                           alt="Wesley Marques"
                           width={192}
                           height={192}

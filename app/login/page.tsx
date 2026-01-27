@@ -51,9 +51,9 @@ export default function LoginPage() {
           {/* Logo oficial */}
           <div className="flex justify-center mb-6">
             <img
-              src="/logo.png"
+              src="/logoo.webp"
               alt="Compartilhar Clube"
-              className="w-20 h-20 object-contain"
+              className="w-20 h-20 object-contain rounded-lg"
             />
           </div>
 

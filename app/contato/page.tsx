@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { Header } from "@/components/layout/Header"
-import { Footer } from "@/components/layout/Footer"
-import { Container } from "@/components/layout/Container"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Mail, Phone, Instagram, Send } from "lucide-react"
-import { useState } from "react"
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+import { Container } from "@/components/layout/Container";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Mail, Phone, Instagram, Send } from "lucide-react";
+import { useState } from "react";
 
 export default function ContatoPage() {
   const [formData, setFormData] = useState({
@@ -18,14 +18,14 @@ export default function ContatoPage() {
     email: "",
     phone: "",
     message: "",
-  })
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     // TODO: Implement form submission
-    console.log("[v0] Form submitted:", formData)
-    alert("Mensagem enviada! Entraremos em contato em breve.")
-  }
+    console.log("[v0] Form submitted:", formData);
+    alert("Mensagem enviada! Entraremos em contato em breve.");
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -36,9 +36,12 @@ export default function ContatoPage() {
         <section className="bg-gradient-to-br from-primary to-secondary py-16 md:py-24">
           <Container>
             <div className="max-w-3xl mx-auto text-center text-white">
-              <h1 className="text-4xl md:text-5xl font-bold mb-6 font-display">Fale Conosco</h1>
+              <h1 className="text-4xl md:text-5xl font-bold mb-6 font-display">
+                Fale Conosco
+              </h1>
               <p className="text-xl text-white/90 leading-relaxed">
-                Estamos aqui para responder suas dúvidas e te ajudar a fazer parte do Compartilhar Clube
+                Estamos aqui para responder suas dúvidas e te ajudar a fazer
+                parte do Compartilhar Clube
               </p>
             </div>
           </Container>
@@ -50,10 +53,15 @@ export default function ContatoPage() {
             <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
               {/* Form */}
               <div>
-                <h2 className="text-2xl font-bold text-primary mb-6 font-display">Envie sua mensagem</h2>
+                <h2 className="text-2xl font-bold text-primary mb-6 font-display">
+                  Envie sua mensagem
+                </h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
+                    <label
+                      htmlFor="name"
+                      className="block text-sm font-medium text-foreground mb-2"
+                    >
                       Nome completo *
                     </label>
                     <Input
@@ -61,14 +69,19 @@ export default function ContatoPage() {
                       type="text"
                       required
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
                       placeholder="Seu nome"
                       className="w-full"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
+                    <label
+                      htmlFor="email"
+                      className="block text-sm font-medium text-foreground mb-2"
+                    >
                       E-mail *
                     </label>
                     <Input
@@ -76,35 +89,47 @@ export default function ContatoPage() {
                       type="email"
                       required
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
                       placeholder="seu@email.com"
                       className="w-full"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-foreground mb-2">
+                    <label
+                      htmlFor="phone"
+                      className="block text-sm font-medium text-foreground mb-2"
+                    >
                       Telefone/WhatsApp
                     </label>
                     <Input
                       id="phone"
                       type="tel"
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, phone: e.target.value })
+                      }
                       placeholder="(11) 99999-9999"
                       className="w-full"
                     />
                   </div>
 
                   <div>
-                    <label htmlFor="message" className="block text-sm font-medium text-foreground mb-2">
+                    <label
+                      htmlFor="message"
+                      className="block text-sm font-medium text-foreground mb-2"
+                    >
                       Mensagem *
                     </label>
                     <Textarea
                       id="message"
                       required
                       value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, message: e.target.value })
+                      }
                       placeholder="Conte-nos como podemos ajudar..."
                       rows={6}
                       className="w-full"
@@ -124,7 +149,9 @@ export default function ContatoPage() {
 
               {/* Contact Info */}
               <div>
-                <h2 className="text-2xl font-bold text-primary mb-6 font-display">Outras formas de contato</h2>
+                <h2 className="text-2xl font-bold text-primary mb-6 font-display">
+                  Outras formas de contato
+                </h2>
 
                 <div className="space-y-6">
                   <Card className="p-6 hover:shadow-lg transition-shadow">
@@ -133,7 +160,9 @@ export default function ContatoPage() {
                         <Mail className="w-6 h-6 text-accent" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-primary mb-1">E-mail</h3>
+                        <h3 className="font-semibold text-primary mb-1">
+                          E-mail
+                        </h3>
                         <a
                           href="mailto:contato@compartilharclube.com.br"
                           className="text-muted-foreground hover:text-accent transition-colors"
@@ -150,16 +179,20 @@ export default function ContatoPage() {
                         <Phone className="w-6 h-6 text-accent" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-primary mb-1">WhatsApp</h3>
+                        <h3 className="font-semibold text-primary mb-1">
+                          WhatsApp
+                        </h3>
                         <a
-                          href="https://wa.me/5511999999999"
+                          href="https://wa.me/55(85)92162-8747 "
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-muted-foreground hover:text-accent transition-colors"
                         >
-                          (11) 99999-9999
+                          (85) 92162-8747
                         </a>
-                        <p className="text-sm text-muted-foreground mt-1">Clique para conversar</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Clique para conversar
+                        </p>
                       </div>
                     </div>
                   </Card>
@@ -170,7 +203,9 @@ export default function ContatoPage() {
                         <Instagram className="w-6 h-6 text-accent" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-primary mb-1">Instagram</h3>
+                        <h3 className="font-semibold text-primary mb-1">
+                          Instagram
+                        </h3>
                         <a
                           href="https://instagram.com/compartilharclube"
                           target="_blank"
@@ -179,14 +214,19 @@ export default function ContatoPage() {
                         >
                           @compartilharclube
                         </a>
-                        <p className="text-sm text-muted-foreground mt-1">Siga-nos nas redes sociais</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Siga-nos nas redes sociais e fique por dentro das
+                          novidades!
+                        </p>
                       </div>
                     </div>
                   </Card>
                 </div>
 
                 <div className="mt-8 p-6 bg-muted/30 rounded-lg">
-                  <h3 className="font-semibold text-primary mb-2">Horário de atendimento</h3>
+                  <h3 className="font-semibold text-primary mb-2">
+                    Horário de atendimento
+                  </h3>
                   <p className="text-muted-foreground text-sm">
                     Segunda a Sexta: 9h às 18h
                     <br />
@@ -201,5 +241,5 @@ export default function ContatoPage() {
 
       <Footer />
     </div>
-  )
+  );
 }

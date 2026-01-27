@@ -5,6 +5,7 @@ Plataforma web completa para a comunidade de aprendizagem e formação continuad
 ## Características Principais
 
 ### Site Institucional
+
 - Página inicial com apresentação do clube
 - Seção "O que é o Compartilhar Clube"
 - Seção "O que você encontra no clube" com cards informativos
@@ -12,6 +13,7 @@ Plataforma web completa para a comunidade de aprendizagem e formação continuad
 - Formulário de contato com informações de WhatsApp e Instagram
 
 ### Área do Aluno (Membros)
+
 - Dashboard personalizado com estatísticas
 - Aulas gravadas organizadas por ordem
 - Biblioteca de recursos em PDF para download
@@ -22,6 +24,7 @@ Plataforma web completa para a comunidade de aprendizagem e formação continuad
 - Botão flutuante para acesso ao grupo do WhatsApp
 
 ### Área Administrativa
+
 - Dashboard com métricas e atividade recente
 - Gerenciamento de aulas (cadastro, edição, ativar/desativar)
 - Gerenciamento de recursos PDF (cadastro, edição, ativar/desativar)
@@ -40,6 +43,7 @@ Plataforma web completa para a comunidade de aprendizagem e formação continuad
 ## Identidade Visual
 
 ### Cores da Marca
+
 - **Azul Petróleo** (#2f4a70) - Cor principal
 - **Amarelo Mostarda** (#e1b12c) - Cor de destaque / CTAs
 - **Azul Acinzentado** (#4a6278) - Secundária
@@ -97,11 +101,13 @@ src/
 ## Como Executar
 
 1. Instale as dependências:
+
 ```bash
 npm install
 ```
 
 2. Execute o servidor de desenvolvimento:
+
 ```bash
 npm run dev
 ```
@@ -118,6 +124,7 @@ npm run dev
 ## Próximas Etapas e Melhorias Futuras
 
 ### Backend e Integração
+
 1. **Banco de Dados**
    - Escolher e configurar banco (Supabase, Neon, PostgreSQL)
    - Criar migrations para tabelas (users, lessons, resources, supervisions, feedback)
@@ -137,6 +144,7 @@ npm run dev
    - Endpoints protegidos com middleware de autenticação
 
 ### Upload e Gerenciamento de Arquivos
+
 1. **Upload de Vídeos**
    - Integração com serviço de vídeo (Vimeo, YouTube privado, Cloudflare Stream)
    - Sistema de upload de vídeos no admin
@@ -149,6 +157,7 @@ npm run dev
    - Preview de PDFs antes do download
 
 ### Sistema de Assinatura
+
 1. **Integração com Pagamento**
    - Integração com Stripe para assinaturas mensais
    - Webhooks para gerenciar status de assinatura
@@ -161,6 +170,7 @@ npm run dev
    - Notificações de renovação
 
 ### Features Adicionais
+
 1. **Notificações**
    - Sistema de notificações in-app
    - Email notifications para novas aulas
@@ -188,6 +198,7 @@ npm run dev
    - Taxa de retenção de alunos
 
 ### Melhorias de UX/UI
+
 1. **Responsividade**
    - Testes em dispositivos móveis
    - Ajustes finos de layout mobile
@@ -208,6 +219,7 @@ npm run dev
    - robots.txt configurado
 
 ### Testes
+
 1. **Testes Unitários**
    - Jest + React Testing Library
    - Testes de componentes principais
@@ -221,6 +233,7 @@ npm run dev
    - Testes de autenticação
 
 ### DevOps
+
 1. **CI/CD**
    - GitHub Actions para deploy automático
    - Testes automáticos no PR
@@ -236,13 +249,15 @@ npm run dev
 ## Observações Importantes
 
 ### Ética Profissional
+
 - Supervisões de casos clínicos da psicologia são exclusivas para psicólogos
 - Respeito ao sigilo profissional e código de ética
 - Outras supervisões abertas para todos os membros
 
 ### Contatos Padrão (Atualizar)
+
 - Email: contato@compartilharclube.com.br
-- WhatsApp: (11) 99999-9999
+- WhatsApp: (85) 92162-8747
 - Instagram: @compartilharclube
 
 ## Licença

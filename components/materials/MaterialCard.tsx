@@ -11,6 +11,7 @@ interface MaterialCardProps {
   audience: string;
   price: string;
   canvaUrl: string;
+  image: string;
   isPremium?: boolean;
 }
 
@@ -21,46 +22,64 @@ export function MaterialCard({
   audience,
   price,
   canvaUrl,
+  image,
   isPremium = false,
 }: MaterialCardProps) {
   return (
-    <Card className="relative flex flex-col p-6 border border-border/60 bg-background hover:shadow-xl transition-all duration-300">
-      {/* Badge Premium */}
-      {isPremium && (
-        <div className="absolute top-4 right-4 flex items-center gap-1 bg-accent text-primary text-xs font-semibold px-3 py-1 rounded-full">
-          <Crown className="w-3.5 h-3.5" />
-          Premium
-        </div>
-      )}
+    <Card className="group relative flex flex-col overflow-hidden border border-border/60 bg-background shadow-md hover:shadow-xl transition-all duration-300">
+      {/* IMAGEM */}
+      <div className="relative h-48 overflow-hidden">
+        <img
+          src={image}
+          alt={title}
+          loading="lazy"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
 
-      {/* Ícone */}
-      <div className="w-12 h-12 rounded-xl bg-accent/15 flex items-center justify-center mb-4">
-        <FileText className="w-6 h-6 text-accent" />
+        {/* Overlay leve */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
+
+        {/* Badge Premium */}
+        {isPremium && (
+          <div className="absolute top-4 right-4 flex items-center gap-1 bg-accent text-primary text-xs font-semibold px-3 py-1 rounded-full shadow">
+            <Crown className="w-3.5 h-3.5" />
+            Premium
+          </div>
+        )}
       </div>
 
-      {/* Conteúdo */}
-      <h3 className="text-lg font-semibold text-primary mb-2">{title}</h3>
+      {/* CONTEÚDO */}
+      <div className="flex flex-col flex-1 p-6">
+        <h3 className="text-lg font-bold text-primary mb-2 leading-snug">
+          {title}
+        </h3>
 
-      <p className="text-sm text-muted-foreground mb-4">{description}</p>
+        <p className="text-sm text-muted-foreground mb-4">{description}</p>
 
-      <ul className="text-sm text-muted-foreground mb-6 space-y-1">
-        <li>• {pages} páginas</li>
-        <li>• Público: {audience}</li>
-      </ul>
+        <ul className="text-sm text-muted-foreground mb-6 space-y-1">
+          <li>• {pages} páginas</li>
+          <li>• Público: {audience}</li>
+        </ul>
 
-      {/* Rodapé */}
-      <div className="mt-auto flex items-center justify-between">
-        <span className="text-lg font-bold text-primary">{price}</span>
+        {/* RODAPÉ */}
+        <div className="mt-auto flex items-center justify-between gap-4">
+          <span className="text-xl font-bold text-primary">{price}</span>
 
-        <Button
-          asChild
-          className="bg-accent hover:bg-accent-dark text-primary rounded-full"
-        >
-          <a href={canvaUrl} target="_blank" rel="noopener noreferrer">
-            Acessar no PDF
-            <ExternalLink className="w-4 h-4 ml-2" />
-          </a>
-        </Button>
+          <Button
+            asChild
+            className="bg-gradient-to-r from-accent to-[#f3c969] hover:brightness-110 text-primary font-semibold rounded-full px-5"
+          >
+            <a
+              href={canvaUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2"
+            >
+              Acessar no PDF
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          </Button>
+        </div>
       </div>
     </Card>
   );

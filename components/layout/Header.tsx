@@ -16,9 +16,9 @@ export function Header() {
           <Link href="/" className="flex items-center gap-4">
             <div className="flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-full bg-white shadow-md border border-border/40 overflow-hidden">
               <img
-                src="/logo.png"
+                src="/logoo.webp"
                 alt="Compartilhar Clube"
-                className="w-full h-full object-cover scale-100"
+                className="w-full h-full object-cover"
               />
             </div>
 
@@ -35,18 +35,29 @@ export function Header() {
             >
               Início
             </Link>
+
             <Link
               href="/recursos"
               className="text-base font-medium text-foreground hover:text-primary transition-colors"
             >
               Recursos
             </Link>
+
+            {/* ✅ AJUSTADO */}
+            <Link
+              href="/materiais"
+              className="text-base font-medium text-foreground hover:text-primary transition-colors"
+            >
+              Recursos Individuais
+            </Link>
+
             <Link
               href="/clube"
               className="text-base font-medium text-foreground hover:text-primary transition-colors"
             >
               Clube de Assinatura
             </Link>
+
             <Link
               href="/contato"
               className="text-base font-medium text-foreground hover:text-primary transition-colors"
@@ -86,6 +97,7 @@ export function Header() {
               >
                 Início
               </Link>
+
               <Link
                 href="/recursos"
                 onClick={() => setIsMenuOpen(false)}
@@ -93,6 +105,16 @@ export function Header() {
               >
                 Recursos
               </Link>
+
+              {/* ✅ AJUSTADO */}
+              <Link
+                href="/materiais"
+                onClick={() => setIsMenuOpen(false)}
+                className="text-lg font-medium text-foreground hover:text-primary transition-colors"
+              >
+                Recursos Individuais
+              </Link>
+
               <Link
                 href="/clube"
                 onClick={() => setIsMenuOpen(false)}
@@ -100,6 +122,7 @@ export function Header() {
               >
                 Clube de Assinatura
               </Link>
+
               <Link
                 href="/contato"
                 onClick={() => setIsMenuOpen(false)}

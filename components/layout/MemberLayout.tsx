@@ -86,9 +86,9 @@ export function MemberLayout({ children }: MemberLayoutProps) {
             <Link href="/aluno/dashboard" className="flex items-center gap-3">
               <div className="flex items-center justify-center w-13 h-13 rounded-full bg-primary">
                 <img
-                  src="/logo.png"
+                  src="/logoo.webp"
                   alt="Compartilhar Clube"
-                  className="w-10 h-8"
+                  className="w-14 h-14"
                 />
               </div>
               <div>
