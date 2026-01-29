@@ -10,6 +10,7 @@ Plataforma web completa para a comunidade de aprendizagem e formação continuad
 - Seção "O que é o Compartilhar Clube"
 - Seção "O que você encontra no clube" com cards informativos
 - Páginas de Recursos e Clube de Assinatura
+- Página de Materiais Individuais para aqueles que não querem assinar o clube
 - Formulário de contato com informações de WhatsApp e Instagram
 
 ### Área do Aluno (Membros)

@@ -36,12 +36,12 @@ export function Header() {
               Início
             </Link>
 
-            <Link
+            {/* <Link
               href="/recursos"
               className="text-base font-medium text-foreground hover:text-primary transition-colors"
             >
               Recursos
-            </Link>
+            </Link> */}
 
             {/* ✅ AJUSTADO */}
             <Link

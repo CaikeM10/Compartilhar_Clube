@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 
   // 🔹 FAVICON / ÍCONES
   icons: {
-    icon: "/logoo.webp",
+    icon: "/favicon.png",
     shortcut: "/icon.png",
     apple: "/apple-icon.png",
   },

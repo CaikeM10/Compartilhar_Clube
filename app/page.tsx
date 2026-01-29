@@ -239,7 +239,7 @@ export default function HomePage() {
                   asChild
                   className="w-full bg-primary hover:bg-primary/90 text-white rounded-full"
                 >
-                  <Link href="/clube">Começar agora</Link>
+                  <Link href="/checkout?plan=mensal">Começar agora</Link>
                 </Button>
               </Card>
             </ScrollAnimation>
@@ -297,7 +297,7 @@ export default function HomePage() {
                   asChild
                   className="w-full bg-accent hover:bg-accent/90 text-primary rounded-full font-bold"
                 >
-                  <Link href="/clube">Assinar agora</Link>
+                  <Link href="/checkout?plan=trimestral">Assinar agora</Link>
                 </Button>
               </Card>
             </ScrollAnimation>
@@ -342,12 +342,11 @@ export default function HomePage() {
                     ))}
                   </ul>
                 </div>
-
                 <Button
                   asChild
                   className="w-full bg-primary hover:bg-primary/90 text-white rounded-full"
                 >
-                  <Link href="/clube">Assinar agora</Link>
+                  <Link href="/checkout?plan=anual">Assinar agora</Link>
                 </Button>
               </Card>
             </ScrollAnimation>
@@ -385,7 +384,7 @@ export default function HomePage() {
       </section>
       <SectionDivider variant="gradient" />
 
-      {/* ================= MATERIAIS AVULSOS ================= */}
+      {/* ================= MATERIAIS INDIVIDUAIS ================= */}
       <section className="relative py-24 bg-background overflow-hidden">
         <Container>
           {/* TÍTULO */}
@@ -404,8 +403,15 @@ export default function HomePage() {
           {/* ================= CARROSSEL ================= */}
           <ScrollAnimation animation="fade-up" delay={150}>
             <div className="relative overflow-hidden">
-              {(() => {
-                const materials = [
+              <div
+                className="
+            flex gap-8
+            animate-materials-scroll
+            hover:[animation-play-state:paused]
+            will-change-transform
+          "
+              >
+                {[
                   {
                     title: "Marmita da Leitura",
                     image: "/marmitadaleitura.webp",
@@ -419,7 +425,7 @@ export default function HomePage() {
                   { title: "Varal Literário", image: "/varalliterário.webp" },
                   { title: "Pipoca com Rima", image: "/pipocacomrima.webp" },
                   {
-                    title: "Jogo da Memória Com Alfabeto",
+                    title: "Jogo da Memória com Alfabeto",
                     image: "/jogodamemória.webp",
                   },
                   { title: "Letras Iguais", image: "/letrasiguais.webp" },
@@ -427,45 +433,72 @@ export default function HomePage() {
                     title: "Não aceitamos fiado",
                     image: "/não_aceitamos_fiado.webp",
                   },
-                  { title: "Varal Literário", image: "/varalliterário.webp" },
                   {
                     title: "Aprendendo Felicidade",
                     image: "/aprendendofelicidade.webp",
                   },
-                ];
 
-                const infiniteMaterials = [...materials, ...materials];
+                  /* DUPLICAÇÃO PARA LOOP */
+                  {
+                    title: "Marmita da Leitura",
+                    image: "/marmitadaleitura.webp",
+                  },
+                  {
+                    title: "Caçadores de Palavras",
+                    image: "/caçadoresdepalavras.webp",
+                  },
+                  { title: "Arraiá da Alfabetização", image: "/arraiá.webp" },
+                  { title: "Mood Kids", image: "/moodkids.webp" },
+                  { title: "Varal Literário", image: "/varalliterário.webp" },
+                  { title: "Pipoca com Rima", image: "/pipocacomrima.webp" },
+                  {
+                    title: "Jogo da Memória com Alfabeto",
+                    image: "/jogodamemória.webp",
+                  },
+                  { title: "Letras Iguais", image: "/letrasiguais.webp" },
+                  {
+                    title: "Não aceitamos fiado",
+                    image: "/não_aceitamos_fiado.webp",
+                  },
+                  {
+                    title: "Aprendendo Felicidade",
+                    image: "/aprendendofelicidade.webp",
+                  },
+                ].map((item, index) => (
+                  <a
+                    key={index}
+                    href="/materiais"
+                    className="
+                min-w-[260px]
+                bg-white
+                rounded-2xl
+                overflow-hidden
+                border border-border/60
+                transition-transform duration-300
+                hover:scale-[1.03]
+              "
+                  >
+                    {/* IMAGEM */}
+                    <div className="relative h-[330px] overflow-hidden">
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
+                    </div>
 
-                return (
-                  <div className="flex gap-8 animate-materials-scroll hover:[animation-play-state:paused]">
-                    {infiniteMaterials.map((item, index) => (
-                      <a
-                        key={index}
-                        href="/materiais"
-                        className="min-w-[260px] bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all group border border-border/60"
-                      >
-                        {/* IMAGEM */}
-                        <div className="relative h-[330px] overflow-hidden">
-                          <img
-                            src={item.image}
-                            alt={item.title}
-                            loading="lazy"
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
-                        </div>
-
-                        {/* TEXTO */}
-                        <div className="p-5">
-                          <h3 className="font-semibold text-primary text-lg text-center">
-                            {item.title}
-                          </h3>
-                        </div>
-                      </a>
-                    ))}
-                  </div>
-                );
-              })()}
+                    {/* TEXTO */}
+                    <div className="p-5">
+                      <h3 className="font-semibold text-primary text-lg text-center">
+                        {item.title}
+                      </h3>
+                    </div>
+                  </a>
+                ))}
+              </div>
             </div>
           </ScrollAnimation>
 
