@@ -20,11 +20,10 @@ export default function HomePage() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             {/* Left Side - CTA Content */}
             <ScrollAnimation animation="fade-up">
-              <div className="text-white">
+              <div className="text-white text-center md:text-left">
                 {/* Logo */}
-                {/* Logo do Hero */}
                 <div className="mb-10 flex justify-center md:justify-start">
-                  <div className="relative w-32 h-32 md:w-36 md:h-36 transition-transform duration-500 hover:scale-[1.03]">
+                  <div className="relative w-36 h-36 md:w-36 md:h-36">
                     <Image
                       src="/logoo.png"
                       alt="Compartilhar Clube"
@@ -35,7 +34,7 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 font-display leading-tight text-balance">
+                <h1 className="text-4xl sm:text-5xl md:text-4xl lg:text-5xl font-bold mb-6 font-display leading-tight md:max-w-xl mx-auto md:mx-0">
                   Transforme sua prática profissional
                   <br />
                   <span className="text-accent">
@@ -43,45 +42,64 @@ export default function HomePage() {
                   </span>
                 </h1>
 
-                <p className="text-lg md:text-xl mb-6 text-white/90 leading-relaxed max-w-xl">
+                <p className="text-lg md:text-xl mb-8 text-white/90 leading-relaxed md:max-w-xl mx-auto md:mx-0">
                   Junte-se a uma comunidade de educadores e profissionais da
                   saúde mental dedicados ao crescimento, aprendizado e trocas
                   significativas.
                 </p>
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-accent hover:bg-accent-dark text-primary font-bold text-lg px-10 py-4 rounded-full shadow-lg hover:shadow-xl transition-all group"
-                >
-                  <Link
-                    href="#planos"
-                    className="flex items-center gap-2 group"
+
+                {/* CTA DESKTOP (posição original) */}
+                <div className="hidden md:flex">
+                  <Button
+                    asChild
+                    size="lg"
+                    className="bg-gradient-to-r from-accent to-[#f3c969] hover:brightness-110 
+                         text-primary font-bold text-xl px-12 py-5 rounded-full 
+                         shadow-lg hover:shadow-xl transition-all group"
                   >
-                    Faça parte do clube
-                    <Brain className="w-5 h-5 transition-transform group-hover:scale-110" />
-                  </Link>
-                </Button>
+                    <Link href="#planos" className="flex items-center gap-3">
+                      Faça parte do clube
+                      <Brain className="w-6 h-6 transition-transform group-hover:scale-110" />
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </ScrollAnimation>
 
-            {/* Right Side - Photo */}
+            {/* RIGHT IMAGE */}
             <ScrollAnimation animation="fade-up" delay={200}>
-              <div className="relative">
-                <div
-                  className="relative w-full max-w-md mx-auto aspect-square rounded-2xl overflow-hidden shadow-xl border border-white/10
-                    transition-transform duration-700 ease-out hover:scale-[1.02]"
-                >
+              <div className="relative flex flex-col items-center">
+                {/* GLOW */}
+                <div className="absolute inset-0 flex items-center justify-center -z-10">
+                  <div className="w-72 h-72 md:w-80 md:h-80 bg-gradient-to-br from-accent/40 to-[#f3c969]/30 rounded-full blur-3xl" />
+                </div>
+
+                {/* IMAGE */}
+                <div className="relative w-full max-w-sm aspect-square rounded-2xl overflow-hidden shadow-2xl border border-white/10">
                   <Image
                     src="/imagem_principal.webp"
                     alt="Psicólogo Wesley Marques"
                     fill
-                    className="object-cover"
                     priority
+                    className="object-cover"
                   />
                 </div>
 
-                {/* Glow sutil */}
-                <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-accent/20 rounded-full blur-3xl -z-10" />
+                {/* CTA MOBILE */}
+                <div className="mt-10 md:hidden w-full flex justify-center">
+                  <Button
+                    asChild
+                    size="lg"
+                    className="bg-gradient-to-r from-accent to-[#f3c969] hover:brightness-110 
+                         text-primary font-bold text-xl px-12 py-5 rounded-full 
+                         shadow-lg transition-all group"
+                  >
+                    <Link href="#planos" className="flex items-center gap-3">
+                      Faça parte do clube
+                      <Brain className="w-6 h-6 transition-transform group-hover:scale-110" />
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </ScrollAnimation>
           </div>

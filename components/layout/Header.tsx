@@ -36,14 +36,6 @@ export function Header() {
               Início
             </Link>
 
-            {/* <Link
-              href="/recursos"
-              className="text-base font-medium text-foreground hover:text-primary transition-colors"
-            >
-              Recursos
-            </Link> */}
-
-            {/* ✅ AJUSTADO */}
             <Link
               href="/materiais"
               className="text-base font-medium text-foreground hover:text-primary transition-colors"
@@ -70,7 +62,7 @@ export function Header() {
           <div className="hidden md:block">
             <Button
               asChild
-              className="bg-accent text-primary font-semibold text-base rounded-full px-8 py-3 shadow-md hover:shadow-lg hover:scale-[1.05] transition-all"
+              className="bg-gradient-to-r from-accent to-[#f3c969] text-primary font-semibold text-base rounded-full px-8 py-3 shadow-md hover:shadow-lg hover:scale-[1.05] transition-all"
             >
               <Link href="/login">Acessar Plataforma</Link>
             </Button>
@@ -78,69 +70,74 @@ export function Header() {
 
           {/* MOBILE MENU BUTTON */}
           <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            onClick={() => setIsMenuOpen(true)}
             className="md:hidden p-2 rounded-lg text-primary hover:bg-muted transition"
             aria-label="Abrir menu"
           >
-            {isMenuOpen ? <X size={26} /> : <Menu size={26} />}
+            <Menu size={26} />
           </button>
         </div>
+      </div>
 
-        {/* MOBILE MENU */}
-        {isMenuOpen && (
-          <nav className="md:hidden py-6 border-t border-border/60">
-            <div className="flex flex-col gap-5">
-              <Link
-                href="/"
+      {/* ================= MOBILE MENU PREMIUM ================= */}
+      {isMenuOpen && (
+        <div className="fixed inset-0 z-[9999] md:hidden">
+          {/* BACKDROP */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setIsMenuOpen(false)}
+          />
+
+          {/* MENU CONTAINER */}
+          <div className="absolute top-0 left-0 right-0 bg-white rounded-b-3xl shadow-2xl px-6 pt-6 pb-10">
+            {/* HEADER */}
+            <div className="flex items-center justify-between mb-8">
+              <span className="text-lg font-bold text-primary font-display">
+                Menu
+              </span>
+              <button
                 onClick={() => setIsMenuOpen(false)}
-                className="text-lg font-medium text-foreground hover:text-primary transition-colors"
+                className="p-2 rounded-full bg-muted text-primary"
               >
+                <X size={22} />
+              </button>
+            </div>
+
+            {/* LINKS */}
+            <nav className="flex flex-col gap-6 text-lg font-medium text-foreground">
+              <Link href="/" onClick={() => setIsMenuOpen(false)}>
                 Início
               </Link>
 
-              <Link
-                href="/recursos"
-                onClick={() => setIsMenuOpen(false)}
-                className="text-lg font-medium text-foreground hover:text-primary transition-colors"
-              >
-                Recursos
-              </Link>
-
-              {/* ✅ AJUSTADO */}
-              <Link
-                href="/materiais"
-                onClick={() => setIsMenuOpen(false)}
-                className="text-lg font-medium text-foreground hover:text-primary transition-colors"
-              >
+              <Link href="/materiais" onClick={() => setIsMenuOpen(false)}>
                 Recursos Individuais
               </Link>
 
               <Link
                 href="/clube"
                 onClick={() => setIsMenuOpen(false)}
-                className="text-lg font-medium text-foreground hover:text-primary transition-colors"
+                className="text-accent font-semibold"
               >
                 Clube de Assinatura
               </Link>
 
-              <Link
-                href="/contato"
-                onClick={() => setIsMenuOpen(false)}
-                className="text-lg font-medium text-foreground hover:text-primary transition-colors"
-              >
+              <Link href="/contato" onClick={() => setIsMenuOpen(false)}>
                 Fale Conosco
               </Link>
+            </nav>
 
+            {/* CTA MOBILE */}
+            <div className="mt-10">
               <Button
                 asChild
-                className="bg-accent text-primary font-semibold text-base rounded-full mt-4 py-3 shadow-md hover:shadow-lg transition"
+                className="w-full bg-gradient-to-r from-accent to-[#f3c969] text-primary font-bold text-lg py-5 rounded-full shadow-xl"
               >
                 <Link href="/login">Acessar Plataforma</Link>
               </Button>
             </div>
-          </nav>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

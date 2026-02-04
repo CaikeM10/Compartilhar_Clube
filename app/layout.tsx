@@ -17,14 +17,12 @@ export const metadata: Metadata = {
   description:
     "Espaço de conexão, aprendizado coletivo e formação continuada para professores, psicólogos, psicopedagogos e profissionais da educação.",
 
-  // 🔹 FAVICON / ÍCONES
   icons: {
     icon: "/favicon.png",
     shortcut: "/icon.png",
     apple: "/apple-icon.png",
   },
 
-  // 🔹 OPEN GRAPH (WhatsApp, Instagram, Facebook, LinkedIn)
   openGraph: {
     title: "Compartilhar Clube",
     description:
@@ -43,19 +41,19 @@ export const metadata: Metadata = {
     type: "website",
   },
 
-  // 🔹 SEO EXTRA
   metadataBase: new URL("https://compartilharclube.com.br"),
   generator: "v0.pp",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`${inter.variable} ${poppins.variable} font-sans antialiased`}
       >
         <AuthProvider>{children}</AuthProvider>

@@ -38,7 +38,11 @@ export function MemberLayout({ children }: MemberLayoutProps) {
   const navigation = [
     { name: "Dashboard", href: "/aluno/dashboard", icon: LayoutDashboard },
     { name: "Aulas 2026", href: "/aluno/aulas", icon: Video },
-    { name: "Recursos PDF", href: "/aluno/recursos", icon: FileText },
+    {
+      name: "Biblioteca de Materiais",
+      href: "/aluno/recursos",
+      icon: FileText,
+    },
     { name: "Supervisões", href: "/aluno/supervisoes", icon: Users },
     {
       name: "Solicitar Supervisão PP",

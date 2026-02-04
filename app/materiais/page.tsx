@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Container } from "@/components/layout/Container";
 import { MaterialCard } from "@/components/materials/MaterialCard";
 import { ArrowLeft } from "lucide-react";
+import { is } from "date-fns/locale";
 
 const materials = [
   {
@@ -30,6 +31,7 @@ const materials = [
     price: "R$ 14,90",
     image: "/marmitadaleitura.webp",
     checkoutUrl: "https://pay.hotmart.com/SEU_LINK_4",
+    isPremium: true,
   },
   {
     title: "Caçadores de Palavras",
@@ -48,6 +50,7 @@ const materials = [
     price: "R$ 9,90",
     image: "/moodkids.webp",
     checkoutUrl: "https://pay.hotmart.com/SEU_LINK_7",
+    isPremium: true,
   },
   {
     title: "Varal Literário",
@@ -60,6 +63,7 @@ const materials = [
     price: "R$ 12,90",
     image: "/pipocacomrima.webp",
     checkoutUrl: "https://pay.hotmart.com/SEU_LINK_9",
+    isPremium: true,
   },
   {
     title: "Jogo da Memória com Alfabeto",
@@ -78,6 +82,7 @@ const materials = [
     price: "R$ 12,90",
     image: "/não_aceitamos_fiado.webp",
     checkoutUrl: "https://pay.hotmart.com/SEU_LINK_12",
+    isPremium: true,
   },
   {
     title: "Aprendendo Sobre a Felicidade",

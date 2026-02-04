@@ -14,19 +14,20 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
   const { login } = useAuth();
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
+    setError(null);
 
     try {
       await login(email, password);
       router.push("/aluno/dashboard");
-    } catch (err) {
+    } catch (error) {
       setError(
         "E-mail ou senha incorretos. Verifique seus dados e tente novamente.",
       );
@@ -48,7 +49,7 @@ export default function LoginPage() {
             <span>Voltar ao site</span>
           </Link>
 
-          {/* Logo oficial */}
+          {/* Logo */}
           <div className="flex justify-center mb-6">
             <img
               src="/logoo.webp"
@@ -60,6 +61,7 @@ export default function LoginPage() {
           <h1 className="text-2xl md:text-3xl font-bold text-white font-display">
             Área de Membros – Compartilhar Clube
           </h1>
+
           <p className="text-white/80 mt-2 max-w-md mx-auto">
             Conteúdos exclusivos para profissionais da educação e saúde mental
           </p>
@@ -110,6 +112,7 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* Forgot password */}
             <div className="flex justify-end text-sm">
               <Link
                 href="/recuperar-senha"
@@ -123,8 +126,8 @@ export default function LoginPage() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-accent hover:bg-accent-dark text-primary font-bold rounded-full text-base"
               size="lg"
+              className="w-full bg-accent hover:bg-accent-dark text-primary font-bold rounded-full"
             >
               {isLoading ? "Acessando..." : "Entrar na Plataforma"}
             </Button>
@@ -139,10 +142,11 @@ export default function LoginPage() {
             <div className="text-center text-sm text-muted-foreground">
               Ainda não faz parte do clube?{" "}
               <Link
-                href="/contato"
+                href="/#planos"
                 className="text-primary hover:text-primary/80 font-semibold transition-colors"
               >
-                Solicite acesso ou fale conosco
+                Escolha o seu plano, inscreva-se agora e receba o seu login
+                exclusivo!
               </Link>
             </div>
           </form>
