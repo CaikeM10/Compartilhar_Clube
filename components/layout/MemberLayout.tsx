@@ -60,7 +60,12 @@ export function MemberLayout({ children }: MemberLayoutProps) {
         <div className="flex items-center justify-between px-4 h-16">
           <div className="flex items-center gap-3">
             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary">
-              <span className="text-lg font-bold text-accent">CC</span>
+              {/* Logo simplificada para mobile */}
+              <img
+                src="/logoo.webp"
+                alt="Compartilhar Clube"
+                className="w-10 h-10"
+              />
             </div>
             <span className="font-bold text-primary font-display">
               Compartilhar Clube

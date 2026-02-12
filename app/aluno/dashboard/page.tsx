@@ -120,7 +120,7 @@ export default function DashboardPage() {
             <h2 className="text-2xl font-bold text-primary mb-6 font-display">
               Acesso Rápido
             </h2>
-
+            9
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               <Card className="p-6 hover:shadow-lg transition-shadow">
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">

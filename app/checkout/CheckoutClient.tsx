@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { Container } from "@/components/layout/Container";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, CreditCard, QrCode } from "lucide-react";
@@ -8,6 +9,9 @@ import { ShieldCheck, CreditCard, QrCode } from "lucide-react";
 export default function CheckoutClient() {
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan");
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const plans = {
     mensal: {
@@ -32,6 +36,37 @@ export default function CheckoutClient() {
 
   const selectedPlan = plans[plan as keyof typeof plans];
 
+  const handlePayment = async () => {
+    try {
+      setIsLoading(true);
+      setError("");
+
+      const response = await fetch("/api/create-payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ plan }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao iniciar pagamento");
+      }
+
+      if (data.init_point) {
+        window.location.href = data.init_point;
+      } else {
+        throw new Error("Link de pagamento não gerado");
+      }
+    } catch (err: any) {
+      setError(err.message || "Erro inesperado");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!selectedPlan) {
     return (
       <Container className="py-32 text-center">
@@ -43,7 +78,6 @@ export default function CheckoutClient() {
   return (
     <Container className="py-24">
       <div className="max-w-lg mx-auto">
-        {/* CARD */}
         <div className="bg-white border border-border/60 rounded-3xl shadow-xl p-10 space-y-8">
           {/* HEADER */}
           <div className="text-center space-y-2">
@@ -69,21 +103,30 @@ export default function CheckoutClient() {
             </p>
           </div>
 
-          {/* MÉTODOS (VISUAL, SEM INTEGRAÇÃO AINDA) */}
+          {/* MÉTODOS VISUAIS */}
           <div className="space-y-3">
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
               <CreditCard className="w-4 h-4 text-accent" />
-              Cartão de crédito (parcelamento em breve)
+              Cartão de crédito
             </div>
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
               <QrCode className="w-4 h-4 text-accent" />
-              PIX (liberação imediata)
+              PIX com liberação imediata
             </div>
           </div>
 
+          {/* ERRO */}
+          {error && (
+            <div className="text-sm text-destructive text-center">{error}</div>
+          )}
+
           {/* CTA */}
-          <Button className="w-full bg-gradient-to-r from-accent to-[#f3c969] hover:brightness-110 text-primary font-bold py-6 rounded-full shadow-lg text-lg">
-            Pagar agora
+          <Button
+            onClick={handlePayment}
+            disabled={isLoading}
+            className="w-full bg-gradient-to-r from-accent to-[#f3c969] hover:brightness-110 text-primary font-bold py-6 rounded-full shadow-lg text-lg transition-all"
+          >
+            {isLoading ? "Redirecionando..." : "Pagar agora"}
           </Button>
 
           {/* SEGURANÇA */}
