@@ -27,19 +27,18 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { plan, email } = body;
 
-    // 🔐 Validação básica
+    // validação do plano
     if (!plan || !plans[plan as keyof typeof plans]) {
       return NextResponse.json({ error: "Plano inválido" }, { status: 400 });
     }
 
     const selectedPlan = plans[plan as keyof typeof plans];
 
-    // 🚀 Criando preferência de pagamento
     const response = await preference.create({
       body: {
         items: [
           {
-            id: plan, // mensal | trimestral | anual
+            id: plan,
             title: selectedPlan.title,
             quantity: 1,
             currency_id: "BRL",
@@ -51,7 +50,6 @@ export async function POST(req: Request) {
           email: email || undefined,
         },
 
-        // 🔥 ESSENCIAL PARA WEBHOOK
         metadata: {
           plan: plan,
           source: "site",
@@ -62,6 +60,9 @@ export async function POST(req: Request) {
           failure: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/erro`,
           pending: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/pendente`,
         },
+
+        // webhook para confirmação de pagamento
+        notification_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhook`,
 
         auto_return: "approved",
       },
