@@ -10,8 +10,7 @@ export default function CheckoutClient() {
   const searchParams = useSearchParams();
   const plan = searchParams.get("plan");
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const plans = {
     mensal: {
@@ -36,37 +35,6 @@ export default function CheckoutClient() {
 
   const selectedPlan = plans[plan as keyof typeof plans];
 
-  const handlePayment = async () => {
-    try {
-      setIsLoading(true);
-      setError("");
-
-      const response = await fetch("/api/create-payment", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ plan }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao iniciar pagamento");
-      }
-
-      if (data.init_point) {
-        window.open(data.init_point, "_blank");
-      } else {
-        throw new Error("Link de pagamento não gerado");
-      }
-    } catch (err: any) {
-      setError(err.message || "Erro inesperado");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   if (!selectedPlan) {
     return (
       <Container className="py-32 text-center">
@@ -75,15 +43,45 @@ export default function CheckoutClient() {
     );
   }
 
+  async function handlePayment() {
+    try {
+      setLoading(true);
+
+      const response = await fetch("/api/create-payment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          plan,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.init_point) {
+        throw new Error("Erro ao gerar checkout");
+      }
+
+      // redirecionamento seguro para mobile
+      window.location.href = data.init_point;
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao iniciar pagamento");
+      setLoading(false);
+    }
+  }
+
   return (
     <Container className="py-24">
       <div className="max-w-lg mx-auto">
         <div className="bg-white border border-border/60 rounded-3xl shadow-xl p-10 space-y-8">
-          {/* HEADER */}
+          {/* Header */}
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-bold text-primary font-display">
               {selectedPlan.title}
             </h1>
+
             <p className="text-muted-foreground">{selectedPlan.period}</p>
 
             {selectedPlan.highlight && (
@@ -93,43 +91,40 @@ export default function CheckoutClient() {
             )}
           </div>
 
-          {/* PREÇO */}
+          {/* Preço */}
           <div className="text-center">
             <p className="text-4xl font-bold text-primary">
               {selectedPlan.price}
             </p>
+
             <p className="text-sm text-muted-foreground mt-1">
               Pagamento único
             </p>
           </div>
 
-          {/* MÉTODOS VISUAIS */}
+          {/* Métodos */}
           <div className="space-y-3">
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
               <CreditCard className="w-4 h-4 text-accent" />
-              Cartão de crédito
+              Cartão de crédito (até 12x)
             </div>
+
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
               <QrCode className="w-4 h-4 text-accent" />
-              PIX com liberação imediata
+              PIX (liberação imediata)
             </div>
           </div>
 
-          {/* ERRO */}
-          {error && (
-            <div className="text-sm text-destructive text-center">{error}</div>
-          )}
-
-          {/* CTA */}
+          {/* Botão pagamento */}
           <Button
             onClick={handlePayment}
-            disabled={isLoading}
-            className="w-full bg-gradient-to-r from-accent to-[#f3c969] hover:brightness-110 text-primary font-bold py-6 rounded-full shadow-lg text-lg transition-all"
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-accent to-[#f3c969] hover:brightness-110 text-primary font-bold py-6 rounded-full shadow-lg text-lg"
           >
-            {isLoading ? "Redirecionando..." : "Pagar agora"}
+            {loading ? "Redirecionando..." : "Pagar agora"}
           </Button>
 
-          {/* SEGURANÇA */}
+          {/* Segurança */}
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="w-4 h-4 text-accent" />
             Pagamento 100% seguro • Acesso liberado após confirmação
