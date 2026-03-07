@@ -24,10 +24,11 @@ const plans = {
 
 export async function POST(req: Request) {
   try {
+    console.log("TOKEN MP:", process.env.MERCADO_PAGO_ACCESS_TOKEN);
+
     const body = await req.json();
     const { plan, email } = body;
 
-    // validação do plano
     if (!plan || !plans[plan as keyof typeof plans]) {
       return NextResponse.json({ error: "Plano inválido" }, { status: 400 });
     }
