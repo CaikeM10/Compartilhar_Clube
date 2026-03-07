@@ -29,6 +29,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { plan, email } = body;
 
+    // validação do plano
     if (!plan || !plans[plan as keyof typeof plans]) {
       return NextResponse.json({ error: "Plano inválido" }, { status: 400 });
     }
@@ -62,8 +63,14 @@ export async function POST(req: Request) {
           pending: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/pendente`,
         },
 
-        // webhook para confirmação de pagamento
+        // webhook para confirmação automática
         notification_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhook`,
+
+        // habilita parcelamento
+        payment_methods: {
+          installments: 12,
+          default_installments: 1,
+        },
 
         auto_return: "approved",
       },
