@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//////////////////////////////////////////////////////
+// 👤 USERS 
+//////////////////////////////////////////////////////
+
+model User {
+  id            String   @id @default(cuid())
+  name          String?
+  email         String   @unique
+  password      String?
+  createdAt     DateTime @default(now())
+
+  subscriptions Subscription[]
+
+  @@map("users")
+}
+
+//////////////////////////////////////////////////////
+// 📦 PLANOS
+//////////////////////////////////////////////////////
+
+model Plan {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  price     Int
+  duration  Int
+
+  createdAt DateTime @default(now())
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+//////////////////////////////////////////////////////
+// 💳 ASSINATURAS
+//////////////////////////////////////////////////////
+
+model Subscription {
+  id        String   @id @default(cuid())
+
+  userId    String
+  planId    String
+
+  status    String
+
+  startDate DateTime @default(now())
+  endDate   DateTime
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  plan Plan @relation(fields: [planId], references: [id])
+
+  @@map("subscriptions")
+}
+
+//////////////////////////////////////////////////////
+// 💰 PAGAMENTOS
+//////////////////////////////////////////////////////
+
+model Payment {
+  id            String   @id @default(cuid())
+  mercadopagoId String   @unique
+  email         String
+  plan          String
+  status        String
+  amount        Int
+
+  createdAt     DateTime @default(now())
+
+  @@map("payments")
+}

@@ -1,11 +1,12 @@
 import { MemberLayout } from "@/components/layout/MemberLayout";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { requirePageAccess } from "@/lib/auth/page-access";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, Calendar, Clock, MapPin } from "lucide-react";
 import Link from "next/link";
 
-export default function SupervisoesPage() {
+export default async function SupervisoesPage() {
+  const { user } = await requirePageAccess("subscriber");
   const supervisoes = [
     {
       id: 1,
@@ -46,8 +47,8 @@ export default function SupervisoesPage() {
   ];
 
   return (
-    <ProtectedRoute>
-      <MemberLayout>
+    <>
+      <MemberLayout viewer={user}>
         <div className="space-y-10">
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
@@ -164,6 +165,6 @@ export default function SupervisoesPage() {
           </Card>
         </div>
       </MemberLayout>
-    </ProtectedRoute>
+    </>
   );
 }

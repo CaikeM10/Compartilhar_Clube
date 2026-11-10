@@ -1,31 +1,31 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card } from "@/components/ui/card"
-import { Mail, ArrowLeft, CheckCircle } from "lucide-react"
+import { useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
 
 export default function RecuperarSenhaPage() {
-  const [email, setEmail] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
+  const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     // TODO: Implement password recovery
-    console.log("[v0] Password recovery requested for:", email)
+    console.log("[v0] Password recovery requested for:", email);
 
     setTimeout(() => {
-      setIsLoading(false)
-      setSuccess(true)
-    }, 1500)
-  }
+      setIsLoading(false);
+      setSuccess(true);
+    }, 1500);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary via-primary to-secondary flex items-center justify-center p-4">
@@ -44,8 +44,12 @@ export default function RecuperarSenhaPage() {
               <span className="text-3xl font-bold text-primary">CC</span>
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-white font-display">Recuperar Senha</h1>
-          <p className="text-white/80 mt-2">Enviaremos um link para redefinir sua senha</p>
+          <h1 className="text-2xl font-bold text-white font-display">
+            Recuperar Senha
+          </h1>
+          <p className="text-white/80 mt-2">
+            Enviaremos um link para redefinir sua senha
+          </p>
         </div>
 
         <Card className="p-8">
@@ -54,18 +58,28 @@ export default function RecuperarSenhaPage() {
               <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto">
                 <CheckCircle className="w-8 h-8 text-accent" />
               </div>
-              <h2 className="text-xl font-semibold text-primary">E-mail enviado!</h2>
+              <h2 className="text-xl font-semibold text-primary">
+                E-mail enviado!
+              </h2>
               <p className="text-muted-foreground leading-relaxed">
-                Enviamos um link de recuperação para <strong>{email}</strong>. Verifique sua caixa de entrada e spam.
+                Enviamos um link de recuperação para <strong>{email}</strong>.
+                Verifique sua caixa de entrada e spam.
               </p>
-              <Button asChild className="w-full bg-primary hover:bg-primary/90 text-white rounded-full" size="lg">
+              <Button
+                asChild
+                className="w-full bg-primary hover:bg-primary/90 text-white rounded-full"
+                size="lg"
+              >
                 <Link href="/login">Voltar ao login</Link>
               </Button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-foreground mb-2"
+                >
                   E-mail cadastrado
                 </label>
                 <div className="relative">
@@ -95,5 +109,5 @@ export default function RecuperarSenhaPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

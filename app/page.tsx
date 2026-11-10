@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Video, FileText, MessagesSquare, Check, Brain } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { MaterialsCarousel } from "@/components/materials/MaterialsCarousel";
 
 export default function HomePage() {
   return (
@@ -420,104 +421,7 @@ export default function HomePage() {
 
           {/* ================= CARROSSEL ================= */}
           <ScrollAnimation animation="fade-up" delay={150}>
-            <div className="relative overflow-hidden">
-              <div
-                className="
-            flex gap-8
-            animate-materials-scroll
-            hover:[animation-play-state:paused]
-            will-change-transform
-          "
-              >
-                {[
-                  {
-                    title: "Marmita da Leitura",
-                    image: "/marmitadaleitura.webp",
-                  },
-                  {
-                    title: "Caçadores de Palavras",
-                    image: "/caçadoresdepalavras.webp",
-                  },
-                  { title: "Arraiá da Alfabetização", image: "/arraiá.webp" },
-                  { title: "Mood Kids", image: "/moodkids.webp" },
-                  { title: "Varal Literário", image: "/varalliterário.webp" },
-                  { title: "Pipoca com Rima", image: "/pipocacomrima.webp" },
-                  {
-                    title: "Jogo da Memória com Alfabeto",
-                    image: "/jogodamemória.webp",
-                  },
-                  { title: "Letras Iguais", image: "/letrasiguais.webp" },
-                  {
-                    title: "Não aceitamos fiado",
-                    image: "/não_aceitamos_fiado.webp",
-                  },
-                  {
-                    title: "Aprendendo Felicidade",
-                    image: "/aprendendofelicidade.webp",
-                  },
-
-                  /* DUPLICAÇÃO PARA LOOP */
-                  {
-                    title: "Marmita da Leitura",
-                    image: "/marmitadaleitura.webp",
-                  },
-                  {
-                    title: "Caçadores de Palavras",
-                    image: "/caçadoresdepalavras.webp",
-                  },
-                  { title: "Arraiá da Alfabetização", image: "/arraiá.webp" },
-                  { title: "Mood Kids", image: "/moodkids.webp" },
-                  { title: "Varal Literário", image: "/varalliterário.webp" },
-                  { title: "Pipoca com Rima", image: "/pipocacomrima.webp" },
-                  {
-                    title: "Jogo da Memória com Alfabeto",
-                    image: "/jogodamemória.webp",
-                  },
-                  { title: "Letras Iguais", image: "/letrasiguais.webp" },
-                  {
-                    title: "Não aceitamos fiado",
-                    image: "/não_aceitamos_fiado.webp",
-                  },
-                  {
-                    title: "Aprendendo Felicidade",
-                    image: "/aprendendofelicidade.webp",
-                  },
-                ].map((item, index) => (
-                  <a
-                    key={index}
-                    href="/materiais"
-                    className="
-                min-w-[260px]
-                bg-white
-                rounded-2xl
-                overflow-hidden
-                border border-border/60
-                transition-transform duration-300
-                hover:scale-[1.03]
-              "
-                  >
-                    {/* IMAGEM */}
-                    <div className="relative h-[330px] overflow-hidden">
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        loading="lazy"
-                        decoding="async"
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
-                    </div>
-
-                    {/* TEXTO */}
-                    <div className="p-5">
-                      <h3 className="font-semibold text-primary text-lg text-center">
-                        {item.title}
-                      </h3>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </div>
+            <MaterialsCarousel />
           </ScrollAnimation>
 
           {/* ================= CTA ================= */}

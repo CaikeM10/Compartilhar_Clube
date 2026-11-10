@@ -2,18 +2,16 @@
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download, FileText } from "lucide-react";
+import { FileText } from "lucide-react";
 
 interface MaterialLibraryCardProps {
   title: string;
   image: string;
-  fileUrl: string;
 }
 
 export function MaterialLibraryCard({
   title,
   image,
-  fileUrl,
 }: MaterialLibraryCardProps) {
   return (
     <Card className="group relative flex flex-col overflow-hidden border border-border/60 bg-background shadow-md hover:shadow-xl transition-all duration-300">
@@ -44,17 +42,10 @@ export function MaterialLibraryCard({
 
         {/* CTA */}
         <Button
-          asChild
+          disabled
           className="mt-auto w-full bg-gradient-to-r from-accent to-[#f3c969] hover:brightness-110 text-primary font-bold rounded-full shadow-lg transition-all"
         >
-          <a
-            href={fileUrl}
-            download
-            className="flex items-center justify-center gap-2"
-          >
-            <Download className="w-4 h-4" />
-            Baixar PDF
-          </a>
+          PDF ainda indisponível
         </Button>
       </div>
     </Card>

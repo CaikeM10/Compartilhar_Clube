@@ -1,0 +1,51 @@
+// Proposal fragment only. Not loaded by the application. Migration not approved.
+enum MaterialStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum MaterialAssetStatus {
+  PENDING
+  VALIDATED
+  REJECTED
+  ARCHIVED
+}
+
+model Material {
+  id           String         @id @default(cuid())
+  title        String
+  description  String?
+  priceCents   Int
+  currency     String         @default("BRL")
+  coverImage   String
+  checkoutUrl  String?
+  isPremium    Boolean        @default(false)
+  displayOrder Int
+  status       MaterialStatus @default(DRAFT)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  assets       MaterialAsset[]
+
+  @@index([status, displayOrder])
+  @@map("materials")
+}
+
+model MaterialAsset {
+  id               String              @id @default(cuid())
+  materialId       String
+  storageKey       String              @unique
+  originalFilename String
+  mimeType         String
+  fileSize         Int
+  checksum         String?
+  version          Int
+  status           MaterialAssetStatus @default(PENDING)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  material         Material            @relation(fields: [materialId], references: [id], onDelete: Restrict)
+
+  @@unique([materialId, version])
+  @@index([materialId, status])
+  @@map("material_assets")
+}

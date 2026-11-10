@@ -1,0 +1,114 @@
+[
+  {
+    "id": "material-initial-001",
+    "title": "Aprendendo Sobre a Felicidade",
+    "price": "R$ 4,90",
+    "image": "/aprendendofelicidade.webp",
+    "checkoutUrl": "https://go.hotmart.com/Y104296139M"
+  },
+  {
+    "id": "material-initial-002",
+    "title": "Arraiá da Alfabetização",
+    "price": "R$ 9,90",
+    "image": "/arraiá.webp",
+    "checkoutUrl": "https://go.hotmart.com/Y104296464A"
+  },
+  {
+    "id": "material-initial-003",
+    "title": "Caçadores de Palavras",
+    "price": "R$ 14,90",
+    "image": "/caçadoresdepalavras.webp",
+    "checkoutUrl": "https://go.hotmart.com/P104313409N",
+    "isPremium": true
+  },
+  {
+    "id": "material-initial-004",
+    "title": "Girassol ☀️ e a Vida",
+    "price": "R$ 9,90",
+    "image": "/girasol_vida.webp",
+    "checkoutUrl": "https://go.hotmart.com/B104313490J",
+    "isPremium": true
+  },
+  {
+    "id": "material-initial-005",
+    "title": "História na Caixa -  As bolinhas que Davam e Tiravam o Poder de João",
+    "price": "R$ 4,90",
+    "image": "/História.webp",
+    "checkoutUrl": "https://go.hotmart.com/P104313546Q"
+  },
+  {
+    "id": "material-initial-006",
+    "title": "Intrusos - Letra Inicial",
+    "price": "R$ 4,90",
+    "image": "/intrusos.webp",
+    "checkoutUrl": "https://go.hotmart.com/P104313546Q"
+  },
+  {
+    "id": "material-initial-007",
+    "title": "Jogo da Memória com Alfabeto",
+    "price": "R$ 4,90",
+    "image": "/jogodamemória.webp",
+    "checkoutUrl": "https://go.hotmart.com/Q104320776L"
+  },
+  {
+    "id": "material-initial-008",
+    "title": "Leitores de Palavras",
+    "price": "R$ 9,90",
+    "image": "/leitoresdepalavras.webp",
+    "checkoutUrl": "https://go.hotmart.com/J104322438G",
+    "isPremium": true
+  },
+  {
+    "id": "material-initial-009",
+    "title": "Letras Iguais",
+    "price": "R$ 4,90",
+    "image": "/letrasiguais.webp",
+    "checkoutUrl": "https://go.hotmart.com/H104303497L"
+  },
+  {
+    "id": "material-initial-010",
+    "title": "Marmita da Leitura",
+    "price": "R$ 14,90",
+    "image": "/marmitadaleitura.webp",
+    "checkoutUrl": "https://go.hotmart.com/M104322471P",
+    "isPremium": true
+  },
+  {
+    "id": "material-initial-011",
+    "title": "Mood Kids",
+    "price": "R$ 9,90",
+    "image": "/moodkids.webp",
+    "checkoutUrl": "https://go.hotmart.com/U104303566C",
+    "isPremium": true
+  },
+  {
+    "id": "material-initial-012",
+    "title": "Não Aceitamos Fiado",
+    "price": "R$ 12,90",
+    "image": "/não_aceitamos_fiado.webp",
+    "checkoutUrl": "https://go.hotmart.com/L104322533M",
+    "isPremium": true
+  },
+  {
+    "id": "material-initial-013",
+    "title": "Pipoca com Rima",
+    "price": "R$ 12,90",
+    "image": "/pipocacomrima.webp",
+    "checkoutUrl": "https://go.hotmart.com/T104322586Y",
+    "isPremium": true
+  },
+  {
+    "id": "material-initial-014",
+    "title": "Termômetro das Emoções",
+    "price": "R$ 4,90",
+    "image": "/termometro.webp",
+    "checkoutUrl": ""
+  },
+  {
+    "id": "material-initial-015",
+    "title": "Varal Literário",
+    "price": "R$ 6,90",
+    "image": "/varalliterário.webp",
+    "checkoutUrl": "https://go.hotmart.com/K104322633D"
+  }
+]

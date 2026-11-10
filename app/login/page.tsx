@@ -25,8 +25,9 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      await login(email, password);
-      router.push("/aluno/dashboard");
+      const destination = await login(email, password);
+      router.replace(destination);
+      router.refresh();
     } catch (error) {
       setError(
         "E-mail ou senha incorretos. Verifique seus dados e tente novamente.",

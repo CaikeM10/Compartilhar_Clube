@@ -1,27 +1,42 @@
-"use client"
-import type { ReactNode } from "react"
+"use client";
+import type { ReactNode } from "react";
 
-import { useState } from "react"
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { LayoutDashboard, Video, FileText, Users, Settings, LogOut, Menu, X } from "lucide-react"
-import { useAuth } from "@/contexts/AuthContext"
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  LayoutDashboard,
+  Video,
+  FileText,
+  Users,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AdminLayoutProps {
-  children: ReactNode
+  children: ReactNode;
+  viewer: { name: string | null; email: string };
 }
 
-export function AdminLayout({ children }: AdminLayoutProps) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const pathname = usePathname()
-  const router = useRouter()
-  const { user, logout } = useAuth()
+export function AdminLayout({ children, viewer: user }: AdminLayoutProps) {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+  const { logout } = useAuth();
 
-  const handleLogout = () => {
-    logout()
-    router.push("/login")
-  }
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.replace("/login");
+      router.refresh();
+    } catch {
+      window.alert("Não foi possível encerrar a sessão. Tente novamente.");
+    }
+  };
 
   const navigation = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
@@ -29,7 +44,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     { name: "Gerenciar Recursos", href: "/admin/recursos", icon: FileText },
     { name: "Usuários", href: "/admin/usuarios", icon: Users },
     { name: "Configurações", href: "/admin/configuracoes", icon: Settings },
-  ]
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -68,8 +83,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 <span className="text-2xl font-bold text-primary">CC</span>
               </div>
               <div>
-                <span className="text-lg font-bold text-white font-display block">Compartilhar Clube</span>
-                <span className="text-xs text-white/70">Painel Administrativo</span>
+                <span className="text-lg font-bold text-white font-display block">
+                  Compartilhar Clube
+                </span>
+                <span className="text-xs text-white/70">
+                  Painel Administrativo
+                </span>
               </div>
             </Link>
           </div>
@@ -78,7 +97,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <nav className="flex-1 p-4 overflow-y-auto">
             <ul className="space-y-2">
               {navigation.map((item) => {
-                const isActive = pathname === item.href
+                const isActive = pathname === item.href;
                 return (
                   <li key={item.name}>
                     <Link
@@ -93,7 +112,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                       <span className="font-medium">{item.name}</span>
                     </Link>
                   </li>
-                )
+                );
               })}
             </ul>
           </nav>
@@ -102,10 +121,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <div className="p-4 border-t border-white/10">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 bg-accent/20 rounded-full flex items-center justify-center">
-                <span className="text-lg font-semibold text-accent">{user?.name?.charAt(0).toUpperCase() || "A"}</span>
+                <span className="text-lg font-semibold text-accent">
+                  {user?.name?.charAt(0).toUpperCase() || "A"}
+                </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white truncate">{user?.name}</p>
+                <p className="text-sm font-semibold text-white truncate">
+                  {user?.name}
+                </p>
                 <p className="text-xs text-white/60 truncate">Administrador</p>
               </div>
             </div>
@@ -123,7 +146,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Overlay */}
       {isSidebarOpen && (
-        <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setIsSidebarOpen(false)} />
+        <div
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
       )}
 
       {/* Main Content */}
@@ -131,5 +157,5 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <div className="p-6 lg:p-8">{children}</div>
       </main>
     </div>
-  )
+  );
 }

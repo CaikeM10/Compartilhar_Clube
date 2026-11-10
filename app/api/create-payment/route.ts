@@ -7,6 +7,7 @@ const client = new MercadoPagoConfig({
 
 const preference = new Preference(client);
 
+// 📦 PLANOS
 const plans = {
   mensal: {
     title: "Plano Mensal - Compartilhar Clube",
@@ -24,17 +25,30 @@ const plans = {
 
 export async function POST(req: Request) {
   try {
-    console.log("TOKEN MP:", process.env.MERCADO_PAGO_ACCESS_TOKEN);
-
     const body = await req.json();
     const { plan, email } = body;
 
-    // validação do plano
+    // 🔒 valida plano
     if (!plan || !plans[plan as keyof typeof plans]) {
       return NextResponse.json({ error: "Plano inválido" }, { status: 400 });
     }
 
     const selectedPlan = plans[plan as keyof typeof plans];
+
+    // 🔥 DETECTA AMBIENTE
+    const isDev = process.env.NODE_ENV === "development";
+
+    // 🔥 BASE URL DINÂMICA
+    const baseUrl = isDev
+      ? "https://keven-seizable-doria.ngrok-free.dev" // 👈 TROCA PELO SEU NGROK
+      : process.env.NEXT_PUBLIC_BASE_URL;
+
+    // 🔥 VALOR DINÂMICO (TESTE = R$1)
+    const price = isDev ? 1 : Number(selectedPlan.price);
+
+    console.log("🌐 Ambiente:", isDev ? "DEV" : "PROD");
+    console.log("💰 Valor:", price);
+    console.log("🔗 Base URL:", baseUrl);
 
     const response = await preference.create({
       body: {
@@ -44,7 +58,7 @@ export async function POST(req: Request) {
             title: selectedPlan.title,
             quantity: 1,
             currency_id: "BRL",
-            unit_price: Number(selectedPlan.price),
+            unit_price: price,
           },
         ],
 
@@ -58,15 +72,14 @@ export async function POST(req: Request) {
         },
 
         back_urls: {
-          success: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/sucesso`,
-          failure: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/erro`,
-          pending: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/pendente`,
+          success: `${baseUrl}/checkout/sucesso`,
+          failure: `${baseUrl}/checkout/erro`,
+          pending: `${baseUrl}/checkout/pendente`,
         },
 
-        // webhook para confirmação automática
-        notification_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhook`,
+        // 🔥 WEBHOOK (ESSENCIAL)
+        notification_url: `${baseUrl}/api/webhook`,
 
-        // habilita parcelamento
         payment_methods: {
           installments: 12,
           default_installments: 1,
@@ -80,10 +93,10 @@ export async function POST(req: Request) {
       init_point: response.init_point,
     });
   } catch (error) {
-    console.error("Erro ao criar pagamento:", error);
+    console.error("❌ Erro ao criar pagamento:", error);
 
     return NextResponse.json(
-      { error: "Erro interno ao criar pagamento" },
+      { error: "Erro ao criar pagamento" },
       { status: 500 },
     );
   }

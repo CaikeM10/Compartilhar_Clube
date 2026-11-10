@@ -22,22 +22,28 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface MemberLayoutProps {
   children: ReactNode;
+  viewer: { name: string | null; email: string };
 }
 
-export function MemberLayout({ children }: MemberLayoutProps) {
+export function MemberLayout({ children, viewer: user }: MemberLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
 
-  const handleLogout = () => {
-    logout();
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.replace("/login");
+      router.refresh();
+    } catch {
+      window.alert("Não foi possível encerrar a sessão. Tente novamente.");
+    }
   };
 
   const navigation = [
     { name: "Dashboard", href: "/aluno/dashboard", icon: LayoutDashboard },
-    { name: "Aulas 2026", href: "/aluno/aulas", icon: Video },
+    { name: "Minhas Aulas", href: "/aluno/aulas", icon: Video },
     {
       name: "Biblioteca de Materiais",
       href: "/aluno/recursos",
@@ -72,6 +78,9 @@ export function MemberLayout({ children }: MemberLayoutProps) {
             </span>
           </div>
           <button
+            aria-label={isSidebarOpen ? "Fechar menu" : "Abrir menu"}
+            aria-expanded={isSidebarOpen}
+            aria-controls="member-navigation"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="p-2 text-primary hover:bg-muted rounded-lg"
           >
@@ -82,8 +91,9 @@ export function MemberLayout({ children }: MemberLayoutProps) {
 
       {/* Sidebar */}
       <aside
+        id="member-navigation"
         className={`
-        fixed top-0 left-0 z-40 h-full w-72 bg-white border-r border-border
+        fixed top-16 lg:top-0 bottom-0 left-0 z-40 w-72 max-w-full bg-white border-r border-border
         transform transition-transform duration-300 ease-in-out
         lg:translate-x-0
         ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
@@ -205,38 +215,22 @@ export function MemberLayout({ children }: MemberLayoutProps) {
 
       {/* Main Content */}
       <main className="lg:ml-72 min-h-screen relative">
-        <div className="p-6 lg:p-8">{children}</div>
+        <div className="p-4 sm:p-6 lg:p-8">{children}</div>
 
-        {/* Floating WhatsApp Premium - Sempre visível */}
-        <a
-          href="https://chat.whatsapp.com/KHF4n8J7OTI2yhCCgyDTye"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="fixed bottom-6 right-6 z-50"
-          title="Grupo do WhatsApp"
-        >
-          <div className="relative flex items-center gap-3 animate-float">
-            {/* Balão fixo */}
-            <div className="bg-white text-sm font-medium text-primary px-4 py-2 rounded-lg shadow-xl whitespace-nowrap">
-              Participe do grupo exclusivo
-            </div>
-
-            {/* Glow sutil (sem animação) */}
-            <span className="absolute -inset-2 rounded-full bg-accent/20 blur-xl -z-10" />
-
-            {/* Botão WhatsApp */}
-            <div
-              className="
-          w-16 h-16 rounded-full flex items-center justify-center
-          shadow-2xl
-          bg-gradient-to-br from-[#1fa855] via-[#25D366] to-accent
-          transition-transform duration-300 hover:scale-105
-        "
-            >
-              <MessageCircle className="w-7 h-7 text-white drop-shadow-md" />
-            </div>
-          </div>
-        </a>
+        {/* Convite no fluxo da página para não cobrir o conteúdo. */}
+        <footer className="px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6 lg:px-8">
+          <a
+            href="https://chat.whatsapp.com/KHF4n8J7OTI2yhCCgyDTye"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex w-fit max-w-full items-center gap-3 rounded-xl border border-border bg-white p-3 text-sm font-medium text-primary shadow-sm transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary"
+          >
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#1fa855] via-[#25D366] to-accent shadow-md">
+              <MessageCircle aria-hidden="true" className="h-6 w-6 text-white" />
+            </span>
+            <span>Participe do grupo exclusivo<span className="block text-xs font-normal text-muted-foreground">Abrir no WhatsApp</span></span>
+          </a>
+        </footer>
       </main>
     </div>
   );
