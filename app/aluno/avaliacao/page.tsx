@@ -1,16 +1,15 @@
-"use client";
-
 import { MemberLayout } from "@/components/layout/MemberLayout";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { requirePageAccess } from "@/lib/auth/page-access";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, ExternalLink } from "lucide-react";
 import Link from "next/link";
 
-export default function AvaliacaoPage() {
+export default async function AvaliacaoPage() {
+  const { user } = await requirePageAccess("account");
   return (
-    <ProtectedRoute>
-      <MemberLayout>
+    <>
+      <MemberLayout viewer={user}>
         <div className="max-w-4xl mx-auto py-10 space-y-10">
           {/* Header */}
           <div className="text-center">
@@ -61,6 +60,6 @@ export default function AvaliacaoPage() {
           </Card>
         </div>
       </MemberLayout>
-    </ProtectedRoute>
+    </>
   );
 }

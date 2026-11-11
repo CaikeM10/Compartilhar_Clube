@@ -1,15 +1,16 @@
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { requirePageAccess } from "@/lib/auth/page-access";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Settings, Save } from "lucide-react";
 
-export default function AdminConfiguracoesPage() {
+export default async function AdminConfiguracoesPage() {
+  const { user } = await requirePageAccess("admin");
   return (
-    <ProtectedRoute requireAdmin>
-      <AdminLayout>
+    <>
+      <AdminLayout viewer={user}>
         <div className="max-w-4xl space-y-8">
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2 font-display">
@@ -112,6 +113,7 @@ export default function AdminConfiguracoesPage() {
           </Card>
         </div>
       </AdminLayout>
-    </ProtectedRoute>
+    </>
   );
 }
+

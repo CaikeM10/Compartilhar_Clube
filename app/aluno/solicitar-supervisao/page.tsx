@@ -1,16 +1,15 @@
-"use client";
-
 import { MemberLayout } from "@/components/layout/MemberLayout";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { requirePageAccess } from "@/lib/auth/page-access";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ClipboardList, ExternalLink } from "lucide-react";
 import Link from "next/link";
 
-export default function SolicitarSupervisaoPage() {
+export default async function SolicitarSupervisaoPage() {
+  const { user } = await requirePageAccess("subscriber");
   return (
-    <ProtectedRoute>
-      <MemberLayout>
+    <>
+      <MemberLayout viewer={user}>
         <div className="max-w-3xl mx-auto py-10">
           <Card className="p-10 md:p-12 text-center shadow-xl border border-border">
             {/* Ícone */}
@@ -55,6 +54,6 @@ export default function SolicitarSupervisaoPage() {
           </Card>
         </div>
       </MemberLayout>
-    </ProtectedRoute>
+    </>
   );
 }

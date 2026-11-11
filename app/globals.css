@@ -296,15 +296,56 @@
 .animate-float {
   animation: float 4s ease-in-out infinite;
 }
-@keyframes materials-scroll {
-  0% {
-    transform: translate3d(0, 0, 0);
-  }
-  100% {
-    transform: translate3d(-50%, 0, 0);
-  }
+.materials-carousel {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  touch-action: pan-y pinch-zoom;
 }
 
-.animate-materials-scroll {
-  animation: materials-scroll 35s linear infinite;
+.materials-carousel-track {
+  display: flex;
+  flex-flow: row nowrap;
+  width: max-content;
+}
+
+.materials-carousel-group {
+  display: flex;
+  flex-flow: row nowrap;
+  flex: none;
+  gap: 2rem;
+  padding-right: 2rem;
+}
+
+.materials-carousel-card {
+  width: 260px;
+  flex: 0 0 260px;
+}
+
+.materials-carousel[data-manual="true"] {
+  overflow-x: auto;
+  touch-action: pan-x pan-y pinch-zoom;
+  scrollbar-width: none;
+}
+
+.materials-carousel[data-manual="true"] [data-copy="true"] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .materials-carousel {
+    overflow-x: auto !important;
+    touch-action: pan-x pan-y pinch-zoom;
+    scrollbar-width: none;
+  }
+  .materials-carousel-track {
+    transform: none !important;
+  }
+  .materials-carousel [data-copy="true"] {
+    display: none !important;
+  }
+  .materials-carousel-card {
+    transition: none;
+  }
 }

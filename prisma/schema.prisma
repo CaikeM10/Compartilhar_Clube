@@ -1,0 +1,219 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum LessonStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Lesson {
+  id              String       @id @default(cuid())
+  title           String
+  description     String
+  videoUrl        String
+  durationMinutes Int
+  position        Int
+  status          LessonStatus @default(DRAFT)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([status, position])
+  @@map("lessons")
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//////////////////////////////////////////////////////
+// 👤 USERS 
+//////////////////////////////////////////////////////
+
+model User {
+  id            String   @id @default(cuid())
+  name          String?
+  email         String   @unique
+  password      String?
+  createdAt     DateTime @default(now())
+
+  subscriptions Subscription[]
+
+  emailVerified Boolean  @default(false)
+  image         String?
+  role          Role     @default(STUDENT)
+  disabledAt    DateTime?
+  updatedAt     DateTime @default(now()) @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  STUDENT
+}
+
+model Account {
+  id                    String   @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  password              String?
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("auth_accounts")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("auth_sessions")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@index([identifier])
+  @@index([expiresAt])
+  @@map("auth_verifications")
+}
+
+//////////////////////////////////////////////////////
+// 📦 PLANOS
+//////////////////////////////////////////////////////
+
+model Plan {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  price     Int
+  duration  Int
+
+  createdAt DateTime @default(now())
+
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+//////////////////////////////////////////////////////
+// 💳 ASSINATURAS
+//////////////////////////////////////////////////////
+
+model Subscription {
+  id        String   @id @default(cuid())
+
+  userId    String
+  planId    String
+
+  status    String
+
+  startDate DateTime @default(now())
+  endDate   DateTime
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  plan Plan @relation(fields: [planId], references: [id])
+
+  @@map("subscriptions")
+}
+
+//////////////////////////////////////////////////////
+// 💰 PAGAMENTOS
+//////////////////////////////////////////////////////
+
+model Payment {
+  id            String   @id @default(cuid())
+  mercadopagoId String   @unique
+  email         String
+  plan          String
+  status        String
+  amount        Int
+
+  createdAt     DateTime @default(now())
+
+  @@map("payments")
+}
+
+// Catalog models: applied only to the explicitly authorized local test database.
+enum MaterialStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum MaterialAssetStatus {
+  PENDING
+  VALIDATED
+  REJECTED
+  ARCHIVED
+}
+
+model Material {
+  id           String         @id @default(cuid())
+  title        String
+  description  String?
+  priceCents   Int
+  currency     String         @default("BRL")
+  coverImage   String
+  checkoutUrl  String?
+  isPremium    Boolean        @default(false)
+  displayOrder Int
+  status       MaterialStatus @default(DRAFT)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  assets       MaterialAsset[]
+
+  @@index([status, displayOrder])
+  @@map("materials")
+}
+
+model MaterialAsset {
+  id               String              @id @default(cuid())
+  materialId       String
+  storageKey       String              @unique
+  originalFilename String
+  mimeType         String
+  fileSize         Int
+  checksum         String?
+  version          Int
+  status           MaterialAssetStatus @default(PENDING)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+  material         Material            @relation(fields: [materialId], references: [id], onDelete: Restrict)
+
+  @@unique([materialId, version])
+  @@index([materialId, status])
+  @@map("material_assets")
+}

@@ -1,120 +1,62 @@
-import { AdminLayout } from "@/components/layout/AdminLayout"
-import { ProtectedRoute } from "@/components/ProtectedRoute"
-import { Card } from "@/components/ui/card"
-import { Video, FileText, Users, Activity } from "lucide-react"
+import { AdminLayout } from "@/components/layout/AdminLayout";
+import { requirePageAccess } from "@/lib/auth/page-access";
+import { getAdminDashboard } from "@/lib/admin/dashboard";
+import { Card } from "@/components/ui/card";
+import { Video, CalendarClock, Users, BadgeCheck } from "lucide-react";
+import Link from "next/link";
 
-export default function AdminDashboardPage() {
+export default async function AdminDashboardPage() {
+  const { user } = await requirePageAccess("admin");
+  const data = await getAdminDashboard();
+  const metrics = data.kind === "ready" ? [
+    { label: "Alunos cadastrados", value: data.students, detail: "Contas de aluno, incluindo as desabilitadas.", icon: Users, color: "bg-primary/10 text-primary" },
+    { label: "Assinaturas ativas", value: data.activeSubscriptions, detail: "Status ativo e período vigente. Contagem de assinaturas, não de pessoas.", icon: BadgeCheck, color: "bg-accent/10 text-accent" },
+    { label: "Próximas do vencimento", value: data.expiringSubscriptions, detail: "Assinaturas vigentes que vencem nos próximos 7 dias.", icon: CalendarClock, color: "bg-tertiary/10 text-tertiary" },
+    { label: "Aulas cadastradas", value: data.lessons, detail: `${data.publishedLessons.toLocaleString("pt-BR")} publicadas. Total inclui rascunhos e arquivadas.`, icon: Video, color: "bg-secondary/10 text-secondary" },
+  ] : [];
+
   return (
-    <ProtectedRoute requireAdmin>
-      <AdminLayout>
-        <div className="space-y-8">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2 font-display">Painel Administrativo</h1>
-            <p className="text-muted-foreground text-lg">Visão geral do Compartilhar Clube</p>
-          </div>
-
-          {/* Stats */}
-          <div className="grid md:grid-cols-4 gap-6">
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Users className="w-6 h-6 text-primary" />
-                </div>
-              </div>
-              <p className="text-2xl font-bold text-primary mb-1">156</p>
-              <p className="text-sm text-muted-foreground">Membros ativos</p>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <div className="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
-                  <Video className="w-6 h-6 text-accent" />
-                </div>
-              </div>
-              <p className="text-2xl font-bold text-primary mb-1">24</p>
-              <p className="text-sm text-muted-foreground">Aulas cadastradas</p>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <div className="w-12 h-12 bg-tertiary/10 rounded-lg flex items-center justify-center">
-                  <FileText className="w-6 h-6 text-tertiary" />
-                </div>
-              </div>
-              <p className="text-2xl font-bold text-primary mb-1">120</p>
-              <p className="text-sm text-muted-foreground">Recursos disponíveis</p>
-            </Card>
-
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-2">
-                <div className="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center">
-                  <Activity className="w-6 h-6 text-secondary" />
-                </div>
-              </div>
-              <p className="text-2xl font-bold text-primary mb-1">89%</p>
-              <p className="text-sm text-muted-foreground">Taxa de engajamento</p>
-            </Card>
-          </div>
-
-          {/* Recent Activity */}
-          <div className="grid lg:grid-cols-2 gap-8">
-            <div>
-              <h2 className="text-xl font-bold text-primary mb-4 font-display">Atividade Recente</h2>
-              <Card className="p-6">
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3 pb-4 border-b border-border last:border-0 last:pb-0">
-                    <div className="w-2 h-2 bg-accent rounded-full mt-2 flex-shrink-0"></div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">15 novos usuários se cadastraram</p>
-                      <p className="text-xs text-muted-foreground">Há 2 horas</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 pb-4 border-b border-border last:border-0 last:pb-0">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Nova aula publicada</p>
-                      <p className="text-xs text-muted-foreground">Há 5 horas</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 pb-4 border-b border-border last:border-0 last:pb-0">
-                    <div className="w-2 h-2 bg-tertiary rounded-full mt-2 flex-shrink-0"></div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">8 recursos baixados</p>
-                      <p className="text-xs text-muted-foreground">Há 1 dia</p>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold text-primary mb-4 font-display">Feedback Recente</h2>
-              <Card className="p-6">
-                <div className="space-y-4">
-                  <div className="pb-4 border-b border-border last:border-0 last:pb-0">
-                    <div className="flex items-start justify-between mb-2">
-                      <p className="text-sm font-medium text-foreground">Maria Silva</p>
-                      <span className="text-xs text-muted-foreground">Avaliação: 5/5</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      "Conteúdo excepcional! As aulas são muito práticas e aplicáveis."
-                    </p>
-                  </div>
-                  <div className="pb-4 border-b border-border last:border-0 last:pb-0">
-                    <div className="flex items-start justify-between mb-2">
-                      <p className="text-sm font-medium text-foreground">João Santos</p>
-                      <span className="text-xs text-muted-foreground">Sugestão</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      "Seria ótimo ter mais aulas sobre neuropsicopedagogia."
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          </div>
+    <AdminLayout viewer={user}>
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2 font-display">Painel Administrativo</h1>
+          <p className="text-muted-foreground text-lg">Visão geral do Compartilhar Clube</p>
         </div>
-      </AdminLayout>
-    </ProtectedRoute>
-  )
+
+        {data.kind === "unavailable" ? (
+          <Card className="gap-3 p-6 border-primary/20" role="status">
+            <h2 className="font-semibold text-primary">Indicadores indisponíveis</h2>
+            <p className="text-sm text-muted-foreground">Não foi possível consultar os indicadores agora. Tente novamente em instantes.</p>
+            <a href="/admin/dashboard" className="text-primary underline underline-offset-4">Tentar novamente</a>
+          </Card>
+        ) : (
+          <section aria-label="Indicadores administrativos" className="space-y-3">
+            <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6">
+              {metrics.map(({ label, value, detail, icon: Icon, color }) => (
+                <Card key={label} className="gap-0 p-6 min-w-0">
+                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-3 ${color}`}><Icon aria-hidden="true" className="w-6 h-6" /></div>
+                  <p className="text-2xl font-bold text-primary mb-1 break-words">{value.toLocaleString("pt-BR")}</p>
+                  <h2 className="text-sm font-semibold text-foreground">{label}</h2>
+                  <p className="text-xs text-muted-foreground mt-2">{detail}</p>
+                </Card>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground">Consultado em {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Fortaleza" }).format(new Date(data.checkedAt))} (Fortaleza). <a href="/admin/dashboard" className="underline underline-offset-4">Atualizar indicadores</a></p>
+            <Link href="/admin/aulas" className="inline-block text-sm font-medium text-primary underline underline-offset-4">Gerenciar Aulas</Link>
+          </section>
+        )}
+
+        <div className="grid lg:grid-cols-2 gap-8">
+          <section aria-labelledby="activity-heading">
+            <h2 id="activity-heading" className="text-xl font-bold text-primary mb-4 font-display">Atividade Recente</h2>
+            <Card className="gap-0 p-6"><p className="text-sm text-muted-foreground">O histórico de atividades ainda não está disponível. Quando esse recurso for implementado, os registros aparecerão aqui.</p></Card>
+          </section>
+          <section aria-labelledby="feedback-heading">
+            <h2 id="feedback-heading" className="text-xl font-bold text-primary mb-4 font-display">Feedback Recente</h2>
+            <Card className="gap-0 p-6"><p className="text-sm text-muted-foreground">Avaliações e sugestões ainda não estão integradas a este painel.</p></Card>
+          </section>
+        </div>
+      </div>
+    </AdminLayout>
+  );
 }

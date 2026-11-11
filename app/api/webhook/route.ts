@@ -1,14 +1,14 @@
-import { NextResponse } from "next/server";
+﻿import { prisma } from "@/lib/prisma";
+import { createWebhookHandler } from "@/lib/payments/mercado-pago-webhook";
 
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
+export const runtime = "nodejs";
 
-    console.log("🔔 Webhook Mercado Pago recebido:", body);
-
-    return NextResponse.json({ received: true });
-  } catch (error) {
-    console.error("❌ Erro no webhook:", error);
-    return NextResponse.json({ error: "Webhook error" }, { status: 500 });
-  }
-}
+export const POST = createWebhookHandler({
+  db: prisma,
+  fetch: (url, options) => fetch(url, options),
+  config: () => ({
+    accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN,
+    webhookSecret: process.env.MERCADO_PAGO_WEBHOOK_SECRET,
+    environment: process.env.NODE_ENV,
+  }),
+});

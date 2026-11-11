@@ -1,12 +1,15 @@
 "use client"
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useRef, useSyncExternalStore, type ReactNode } from "react"
 import type { User } from "@/lib/types"
+import { sessionClient } from "@/lib/auth/client"
+import { createSessionStore } from "@/lib/auth/session-store"
+import { useRouter } from "next/navigation"
 
 interface AuthContextType {
   user: User | null
-  login: (email: string, password: string) => Promise<void>
-  logout: () => void
+  login: (email: string, password: string) => Promise<"/admin/dashboard" | "/aluno/dashboard">
+  logout: () => Promise<void>
   isAuthenticated: boolean
   isLoading: boolean
 }
@@ -14,58 +17,52 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [store] = useState(() => createSessionStore(sessionClient))
+  const { user, isLoading } = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getServerSnapshot)
+  const channel = useRef<BroadcastChannel | null>(null)
+  const previousUser = useRef<User | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
-    // Check for stored auth token
-    const checkAuth = async () => {
-      try {
-        const token = localStorage.getItem("auth_token")
-        if (token) {
-          // TODO: Validate token with API
-          // For now, mock user data
-          const mockUser: User = {
-            id: "1",
-            name: "Usuário Teste",
-            email: "usuario@teste.com",
-            role: "student",
-            createdAt: new Date(),
-          }
-          setUser(mockUser)
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error)
-      } finally {
-        setIsLoading(false)
-      }
+    if (isLoading) return
+    const previous = previousUser.current
+    previousUser.current = user
+    if (previous && (previous.id !== user?.id || previous.role !== user?.role)) {
+      // Re-run the existing server guards after revocation or a role change.
+      router.refresh()
     }
+  }, [user, isLoading, router])
 
-    checkAuth()
-  }, [])
+  useEffect(() => {
+    // One-way cleanup of the obsolete mock marker; never read/store a session token.
+    try { localStorage.removeItem("auth_token") } catch { /* Storage may be unavailable. */ }
+    void store.refresh()
+    const refresh = () => { if (document.visibilityState === "visible") void store.refresh() }
+    window.addEventListener("focus", refresh)
+    document.addEventListener("visibilitychange", refresh)
+    const timer = window.setInterval(refresh, 60_000)
+    if (typeof BroadcastChannel !== "undefined") {
+      channel.current = new BroadcastChannel("compartilhar-session")
+      channel.current.onmessage = () => { void store.refresh() }
+    }
+    return () => {
+      window.removeEventListener("focus", refresh)
+      document.removeEventListener("visibilitychange", refresh)
+      window.clearInterval(timer)
+      channel.current?.close()
+      channel.current = null
+    }
+  }, [store])
 
   const login = async (email: string, password: string) => {
-    try {
-      // TODO: Implement actual API call
-      // For now, mock login
-      const mockUser: User = {
-        id: "1",
-        name: "Usuário Teste",
-        email: email,
-        role: email.includes("admin") ? "admin" : "student",
-        createdAt: new Date(),
-      }
-
-      localStorage.setItem("auth_token", "mock_token_" + Date.now())
-      setUser(mockUser)
-    } catch (error) {
-      throw new Error("Login failed")
-    }
+    const destination = await store.login(email, password)
+    channel.current?.postMessage("changed")
+    return destination
   }
 
-  const logout = () => {
-    localStorage.removeItem("auth_token")
-    setUser(null)
+  const logout = async () => {
+    await store.logout()
+    channel.current?.postMessage("changed")
   }
 
   return (
