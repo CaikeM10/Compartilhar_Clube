@@ -1,14 +1,15 @@
-"use client";
-
 import Link from "next/link";
 import { Container } from "@/components/layout/Container";
 import { MaterialCard } from "@/components/materials/MaterialCard";
 import { ArrowLeft } from "lucide-react";
-import { is } from "date-fns/locale";
 
-import { materials } from "@/lib/materials/catalog";
+import { getPublicCatalog } from "@/lib/materials/pages";
 
-export default function MateriaisPage() {
+// Statically cached; refreshed on demand by admin writes (revalidateMaterialPages) and at most every 5 minutes.
+export const revalidate = 300;
+
+export default async function MateriaisPage() {
+  const materials = await getPublicCatalog();
   return (
     <Container>
       <div className="py-20 space-y-16">
@@ -35,11 +36,15 @@ export default function MateriaisPage() {
         </div>
 
         {/* GRID DE MATERIAIS */}
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {materials.map((item, index) => (
-            <MaterialCard key={index} {...item} />
-          ))}
-        </div>
+        {materials.length === 0 ? (
+          <p className="text-center text-muted-foreground" role="status">Nenhum material disponível no momento.</p>
+        ) : (
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {materials.map(({ id, ...item }) => (
+              <MaterialCard key={id} {...item} />
+            ))}
+          </div>
+        )}
       </div>
     </Container>
   );

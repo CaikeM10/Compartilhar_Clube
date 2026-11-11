@@ -1,10 +1,12 @@
-import { materials } from "@/lib/materials/catalog";
 import { MemberLayout } from "@/components/layout/MemberLayout";
 import { requirePageAccess } from "@/lib/auth/page-access";
+import { getLibrary } from "@/lib/materials/pages";
 import { MaterialLibraryCard } from "@/components/library/MaterialLibraryCard";
 
 export default async function RecursosPage() {
   const { user } = await requirePageAccess("subscriber");
+  // After the subscriber guard. Database failures propagate to error.tsx (never a static substitute).
+  const items = await getLibrary();
   return (
     <>
       <MemberLayout viewer={user}>
@@ -22,11 +24,15 @@ export default async function RecursosPage() {
           </div>
 
           {/* GRID DE MATERIAIS */}
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {materials.map((material) => (
-              <MaterialLibraryCard key={material.id} {...material} />
-            ))}
-          </div>
+          {items.length === 0 ? (
+            <p className="text-muted-foreground" role="status">Nenhum material disponível no momento.</p>
+          ) : (
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              {items.map((item) => (
+                <MaterialLibraryCard key={item.id} {...item} />
+              ))}
+            </div>
+          )}
         </div>
       </MemberLayout>
     </>

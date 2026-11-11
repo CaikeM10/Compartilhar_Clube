@@ -10,7 +10,9 @@ function load(file, imports = require) {
   const module = { exports: {} }; new Function('require','module','exports',code)(imports,module,module.exports); return module.exports;
 }
 const validation = load('lib/materials/validation.ts');
-const { createMaterialService } = load('lib/materials/service-core.ts', name => name === './validation' ? validation : require(name));
+const storage = load('lib/storage/private-storage.ts');
+const { createMaterialService } = load('lib/materials/service-core.ts', name => name === './validation' ? validation : name === '@/lib/storage/private-storage' ? storage : require(name));
+const allow = { requireAdmin: async () => {}, requireActiveSubscription: async () => {} };
 const { createAuthorization } = load('lib/auth/authorization-core.ts');
 const input = () => { const { id, status, ...data } = require('../scripts/material-catalog-import-plan.cjs').initialRecords()[0]; return data; };
 
@@ -20,14 +22,14 @@ test('all administrative service operations reject anonymous, STUDENT and disabl
       user: { findUnique: async () => ({ id: 'test', ...identity }) },
     }, async () => new Headers());
     const db = new Proxy({}, { get() { assert.fail('Unauthorized database access'); } });
-    const service = createMaterialService(db, guards.requireAdmin);
+    const service = createMaterialService(db, { requireAdmin: guards.requireAdmin, requireActiveSubscription: guards.requireActiveSubscription });
     await assert.rejects(service.listAdmin()); await assert.rejects(service.create(input()));
     await assert.rejects(service.change('test', {}));
   }
 });
 test('ADMIN creation stays DRAFT and rejects injected IDs, roles, assets and invalid commercial data', async () => {
   let writes = 0;
-  const service = createMaterialService({ material: { create: async ({ data }) => { writes++; return data; } } }, async () => {});
+  const service = createMaterialService({ material: { create: async ({ data }) => { writes++; return data; } } }, allow);
   assert.equal((await service.create(input())).status, 'DRAFT');
   for (const patch of [{ id: 'injected' }, { role: 'ADMIN' }, { assets: [] }, { status: 'PUBLISHED' }, { priceCents: -1 }, { checkoutUrl: 'javascript:alert(1)' }, { coverImage: '/../secret.png' }]) {
     await assert.rejects(service.create({ ...input(), ...patch }), e => e.status === 400);
@@ -38,7 +40,7 @@ test('ADMIN creation stays DRAFT and rejects injected IDs, roles, assets and inv
 test('stale administrative edits fail with 409 and archive is a status change', async () => {
   let count = 0, received;
   const tx = { material: { updateMany: async args => { received = args; return { count }; }, findUniqueOrThrow: async () => ({ status: 'ARCHIVED' }) } };
-  const service = createMaterialService({ $transaction: fn => fn(tx) }, async () => {});
+  const service = createMaterialService({ $transaction: fn => fn(tx) }, allow);
   const input = { expectedUpdatedAt: '2026-11-06T00:00:00.000Z', data: { status: 'ARCHIVED' } };
   await assert.rejects(service.change('test', input), e => e.status === 409);
   count = 1; assert.equal((await service.change('test', input)).status, 'ARCHIVED');

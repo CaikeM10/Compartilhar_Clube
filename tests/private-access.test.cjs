@@ -30,6 +30,13 @@ function loadPage(file, requirePageAccess) {
     if (name === '@/lib/student/subscription') return { getStudentSubscription: async () => ({ kind: 'none' }) };
     if (name === '@/lib/admin/dashboard') return { getAdminDashboard: async () => ({ kind: 'unavailable' }) };
     if (name === '@/lib/materials/catalog') return { materials: require('../lib/materials/catalog.json') };
+    // Material pages (Etapas C/D) read through the persistence layer. Here persistence is disabled, so the
+    // pages render their read-only/static variants, always after the real authorization guard.
+    if (name === '@/lib/materials/server') return { getMaterials: () => { throw Object.assign(new Error('MATERIALS_PERSISTENCE_DISABLED'), { status: 503, code: 'MATERIALS_PERSISTENCE_DISABLED' }); } };
+    if (name === '@/lib/materials/service-core') return { MaterialError: Error };
+    if (name === '@/lib/storage/server') return { getPrivateStorage: () => ({ configured: false }) };
+    if (name === '@/lib/materials/types') return { toMaterialAdminView: row => row };
+    if (name === '@/lib/materials/pages') return { getLibrary: async () => require('../lib/materials/catalog.json').map(item => ({ id: item.id, title: item.title, description: null, image: item.image, hasPdf: false })) };
     if (name === '@/lib/lessons/server') return { getLessons: () => ({ listAdmin: async () => [], listPublished: async () => [] }) };
     if (name === 'react/jsx-runtime') return require(name);
     if (name.startsWith('@/components/') || name === 'lucide-react' || name === 'next/link') return visual;
@@ -58,7 +65,8 @@ test('every private page has server authorization before rendering; visual marku
     if (['app/admin/aulas/page.tsx', 'app/aluno/aulas/page.tsx'].includes(file)) {
       assert.match(source, /getLessons\(\)/);
     } else if (['app/admin/recursos/page.tsx', 'app/aluno/recursos/page.tsx'].includes(file)) {
-      assert.match(source, /@\/lib\/materials\/catalog/);
+      // Etapas C/D: the catalog left the page for the data layer (admin: read-only fallback; student: lib/materials/pages).
+      assert.match(source, /@\/lib\/materials\/(?:catalog|pages)/);
       assert.doesNotMatch(source, /fileUrl|const recursos|const materials/);
     } else if (file === 'app/admin/dashboard/page.tsx') {
       assert.match(source, /getAdminDashboard\(\)/);

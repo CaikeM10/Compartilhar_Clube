@@ -15,7 +15,8 @@ function load(file, imports) {
   return module.exports;
 }
 const validation = load('lib/materials/validation.ts', require);
-const core = load('lib/materials/service-core.ts', name => name === './validation' ? validation : require(name));
+const storage = load('lib/storage/private-storage.ts', require);
+const core = load('lib/materials/service-core.ts', name => name === './validation' ? validation : name === '@/lib/storage/private-storage' ? storage : require(name));
 const { createAuthorization, AuthorizationError } = load('lib/auth/authorization-core.ts', require);
 const input = () => {
   const { id, status, ...data } = require('../scripts/material-catalog-import-plan.cjs').initialRecords()[0];
@@ -23,11 +24,12 @@ const input = () => {
 };
 
 /** Loads lib/materials/server.ts with recorded, injectable dependencies. */
-function loadServer({ db, requireAdmin, log = [] }) {
+function loadServer({ db, requireAdmin, requireActiveSubscription = requireAdmin, log = [] }) {
   const calls = { infrastructure: 0 };
   const imports = name => {
     if (name === '@/lib/auth/server') return { getAuthInfrastructure: () => { calls.infrastructure++; log.push('infrastructure'); return { db, auth: {} }; } };
-    if (name === '@/lib/auth/authorization') return { requireAdmin };
+    if (name === '@/lib/auth/authorization') return { requireAdmin, requireActiveSubscription };
+    if (name === '@/lib/storage/server') return { getPrivateStorage: () => storage.unconfiguredStorage };
     if (name === './service-core') return core;
     throw new Error(`Unexpected import: ${name}`); // e.g. @prisma/client: no second pool
   };
