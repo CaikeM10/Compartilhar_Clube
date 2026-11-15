@@ -13,8 +13,9 @@ async function createStudent(db, createAuth, email, password) {
     if (await tx.payment.count({ where: { email: { equals: email, mode: 'insensitive' } } })) {
       throw new Error('EXISTING_FINANCIAL_RECORD_REFUSED');
     }
+    // Server-side only: public sign-up stays closed in the application configuration.
     const auth = createAuth(tx, { secret: randomBytes(48).toString('base64url'),
-      baseURL: 'http://127.0.0.1:3000', secureCookies: false });
+      baseURL: 'http://127.0.0.1:3000', secureCookies: false, allowSignUp: true });
     const result = await auth.api.signUpEmail({ body: { name: 'Aluno local de testes', email, password } });
     const user = await tx.user.findUniqueOrThrow({ where: { id: result.user.id } });
     const account = await tx.account.findFirst({ where: { userId: user.id, providerId: 'credential' } });

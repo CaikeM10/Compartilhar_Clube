@@ -56,7 +56,8 @@ test('real Better Auth browser SDK, session state and server account endpoint', 
     const { createSessionClient } = await load('client');
     const { createSessionStore } = await load('session-store');
     const baseURL = 'http://127.0.0.1:3000';
-    const auth = createServerAuth(db, readAuthEnvironment({ BETTER_AUTH_SECRET: randomBytes(48).toString('base64url'), BETTER_AUTH_URL: baseURL, NODE_ENV: 'test' }));
+    // Fixtures are created through real sign-up; only this test instance opts in.
+    const auth = createServerAuth(db, { ...readAuthEnvironment({ BETTER_AUTH_SECRET: randomBytes(48).toString('base64url'), BETTER_AUTH_URL: baseURL, NODE_ENV: 'test' }), allowSignUp: true });
     const password = randomBytes(32).toString('base64url');
 
     // Only the browser transport/cookie jar is emulated. SDK, handlers, helpers,

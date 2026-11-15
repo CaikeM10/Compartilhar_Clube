@@ -114,9 +114,10 @@ test('private page entry points and direct auth API with isolated PostgreSQL', a
     const { createAuthorization } = await load('authorization-core');
     const { createPageAccess } = await load('page-access-core');
     const { handleAuthRequest } = await load('http');
-    const auth = createServerAuth(db, readAuthEnvironment({
+    // Fixtures are created through real sign-up; only this test instance opts in.
+    const auth = createServerAuth(db, { ...readAuthEnvironment({
       BETTER_AUTH_SECRET: randomBytes(48).toString('base64url'), BETTER_AUTH_URL: 'http://127.0.0.1:3000', NODE_ENV: 'test',
-    }));
+    }), allowSignUp: true });
     const password = randomBytes(32).toString('base64url');
     const api = async (endpoint, body, cookie) => {
       const response = await handleAuthRequest(new Request(`http://127.0.0.1:3000/api/auth/${endpoint}`, {
