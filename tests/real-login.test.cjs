@@ -25,7 +25,11 @@ test('login and layout JSX unchanged; no simulated credentials or token storage 
       assert.match(source, /Minhas Aulas/);
       assert.doesNotMatch(expression, /fixed bottom-6 right-6/);
       assert.match(expression, /<footer/);
-    } else assert.equal(expression, before, `Visual changed: ${file}`);
+    } else {
+      // The fixture was captured from a CRLF checkout; compare markup independently of line endings
+      // (.gitattributes keeps sources in LF). Any other character difference still fails.
+      assert.equal(expression.replace(/\r\n/g, '\n'), before.replace(/\r\n/g, '\n'), `Visual changed: ${file}`);
+    }
   }
   const context = fs.readFileSync(path.join(root, 'contexts/AuthContext.tsx'), 'utf8');
   assert.doesNotMatch(context, /mockUser|mock_token|includes\(["']admin|localStorage\.(?:getItem|setItem)/);
