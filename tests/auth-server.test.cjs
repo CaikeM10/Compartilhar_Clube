@@ -24,7 +24,8 @@ test('central server authentication and authorization with real local database',
     const { handleAuthRequest } = await load('http');
     const secret = randomBytes(48).toString('base64url');
     const environment = readAuthEnvironment({ BETTER_AUTH_SECRET: secret, BETTER_AUTH_URL: 'http://127.0.0.1:3000', NODE_ENV: 'test' });
-    const auth = createServerAuth(db, environment);
+    // Fixtures are created through real sign-up; only this test instance opts in.
+    const auth = createServerAuth(db, { ...environment, allowSignUp: true });
     const password = randomBytes(30).toString('base64url');
     const request = async (endpoint, body, cookie, instance = auth, base = environment.baseURL, origin = base) => {
       const response = await handleAuthRequest(new Request(`${base}/api/auth/${endpoint}`, {
@@ -194,6 +195,13 @@ test('central server authentication and authorization with real local database',
       assert.match(cookies, /HttpOnly/i);
       assert.match(cookies, /__Secure-compartilhar-clube/);
       assert.doesNotMatch(cookies, /Domain=/i);
+    });
+    await scenario('application configuration refuses public sign-up and creates no user', async () => {
+      const closed = createServerAuth(db, environment);
+      const email = `closed-${randomBytes(12).toString('hex')}@example.invalid`;
+      const signup = await request('sign-up/email', { name: 'Closed', email, password }, undefined, closed);
+      assert.equal(signup.status, 400);
+      assert.equal(await db.user.findUnique({ where: { email } }), null);
     });
     await scenario('configuration failures return generic no-store 503 without exception details', async () => {
       const response = await handleAuthRequest(new Request('http://127.0.0.1:3000/api/auth/get-session'), () => { throw new Error('PRIVATE_DIAGNOSTIC'); });

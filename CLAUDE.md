@@ -77,6 +77,8 @@ Legados (não usar em código novo): `services/api.ts` (mock), `hooks/useResourc
 - Papel: enum `User.role` (`ADMIN`/`STUDENT`), **relido do banco a cada verificação**. Não há allowlist por email.
 - Guards (`lib/auth/authorization.ts`): `requireSession()`, `requireAdmin()`, `requireActiveSubscription()`; erro `AuthorizationError` (401 `UNAUTHENTICATED`, 403 `FORBIDDEN` / `SUBSCRIPTION_REQUIRED`).
 - Assinatura ativa = `Subscription.status === "active"` e `startDate <= agora < endDate`. Admin **não** recebe assinatura implícita.
+- **Cadastro público fechado:** `emailAndPassword.disableSignUp = environment.allowSignUp !== true`. `readAuthEnvironment()` nunca define `allowSignUp`; só código de servidor confiável (scripts de provisionamento/locais, testes de integração) injeta `allowSignUp: true` na própria instância. `tests/auth-signup-closed.test.cjs` cobre isso sem banco.
+- Primeiro ADMIN remoto: `scripts/provision-production-admin.cjs` (`create` | `link-existing`), entradas ocultas, uma transação, prova de login antes da promoção. Execução só com autorização explícita.
 - **Regra:** layout protegido não substitui verificação na API; toda operação revalida sessão e permissão no servidor.
 - Não alterar o fluxo de autenticação sem necessidade comprovada e autorização.
 
@@ -86,6 +88,7 @@ Legados (não usar em código novo): `services/api.ts` (mock), `hooks/useResourc
 - **Não há histórico de migrations.** O bloco de materiais foi aplicado **apenas** no banco local `compartilhar_auth_test@127.0.0.1:5432` por `scripts/local-material-catalog.cjs` (recibo em `docs/catalogo/local-persistence.json`). Produção não tem essas tabelas.
 - `prisma/proposals/materials.sql` contém CHECKs que o Prisma não expressa (preço ≥ 0, BRL, PDF-only, checksum sha256 para VALIDATED, no máximo 1 asset VALIDATED por material).
 - `MaterialAsset → Material` com `onDelete: Restrict`; exclusão de material é lógica (`status = ARCHIVED`).
+- Migração de produção (Neon): proposta e ensaios em `docs/producao-migracao/` (README com status, SQL 00–03/90, resultados). Ensaio local: `node scripts/migration-rehearsal-local.cjs` (sempre ROLLBACK). Branch Neon: `scripts/neon-branch-smoke.cjs` (sempre ROLLBACK). Ensaio completo na branch Neon e login real no Preview aprovados em 2026-11-15; produção **não migrada**. Ordem obrigatória: publicar primeiro o código com cadastro fechado e só depois aplicar 01/02 (a `main` anterior, `63380a4`, tem cadastro aberto). Nada aplicado em produção sem autorização.
 - Proibido: `prisma migrate reset`, `prisma db push` automático, `DROP`/`TRUNCATE`/deleções em massa, qualquer escrita no Neon/produção. Mudanças de schema = proposta SQL revisável e não destrutiva, aplicada só com autorização.
 
 ## 7. Segurança e isolamento de ambientes
@@ -99,14 +102,18 @@ Legados (não usar em código novo): `services/api.ts` (mock), `hooks/useResourc
 ## 8. Testes e validação
 
 - Testes unitários: `node --test tests/<arquivo>.test.cjs` (Node `node:test` + `assert/strict`; transpilam TS com `typescript.transpileModule`, sem banco). Não há script `test` nem Jest/Vitest.
-  - Seguros sem banco: `material-*.test.cjs`, `materials-carousel`, `private-access`, `lessons`, `auth-preparation`, `auth-test-safety`, `real-login`, `admin-dashboard`, `student-dashboard`.
+  - Seguros sem banco: `material-*.test.cjs`, `materials-carousel`, `private-access`, `lessons`, `auth-preparation`, `auth-test-safety`, `real-login`, `admin-dashboard`, `student-dashboard`, `auth-signup-closed`, `provision-admin`, `neon-branch-smoke`.
+  - Regressão de auth com banco local (preserva todos os registros): `node scripts/local-auth-regression.cjs`.
   - Integração (`auth-integration`, `auth-server`, `local-auth-*`) exigem `.env.auth-test.local` e `--test-concurrency=1`; não rodar contra a conta manual preservada.
 - Webhook: `npm run test:webhook`.
 - Tipos: `npx tsc --noEmit`. Build: `pnpm build`.
-- `npm run lint` **não funciona** (eslint não instalado, sem config).
+- `npm run lint` **não funciona** (eslint não instalado, sem config; o script `lint` existe só em `package.json`). Limitação conhecida, sem correção planejada neste release.
+- `pnpm build` carrega o `.env` raiz. Para build local sem tocar em banco real, sobrescreva `DATABASE_URL`, `BETTER_AUTH_URL` e `BETTER_AUTH_SECRET` com valores inertes no ambiente do processo (têm precedência sobre o `.env`).
 - Materiais sem banco: `node --test tests/material-pages.test.cjs tests/material-admin-ui.test.cjs tests/material-admin.test.cjs tests/material-catalog.test.cjs tests/material-persistence.test.cjs tests/material-server.test.cjs`.
 - `tests/material-catalog.test.cjs` contém guardas intencionais: hashes de ~34 arquivos protegidos (auth, pagamentos, aulas, schema fora do bloco de materiais, layouts); com persistência desligada, `/admin/recursos` e `/aluno/recursos` sem botões/links de download; `/materiais` deve renderizar HTML idêntico ao JSX aprovado em `docs/catalogo/baseline.json` (equivalência de renderização, com persistência desligada e com as 15 linhas semente); conjunto **exato** de rotas de materiais, cada handler com guard, sem Prisma/`storageKey`/env direto; nenhum `.pdf` em `public/`. Atualize as guardas de forma explícita e revisada quando a evolução for aprovada.
-- Falha conhecida e anterior a esta etapa: `tests/private-access.test.cjs` ("Existing Prisma schema changed") compara o schema removendo só o bloco de `Lesson`; o bloco de materiais, aplicado antes, quebra o hash. Os cenários com PostgreSQL de `private-access` e `real-login` exigem `.env.auth-test.local` (`AUTH_TEST_TARGET_REJECTED` sem ele).
+- `tests/private-access.test.cjs` compara o schema original removendo os blocos autorizados de `Lesson` e de materiais (este último precisa ser idêntico a `prisma/proposals/materials.prisma`, mesma regra do `material-catalog`); o hash de referência não mudou.
+- Os cenários com PostgreSQL de `private-access` e `real-login` só rodam via `node scripts/local-auth-regression.cjs`; executados diretamente, falham com `AUTH_TEST_TARGET_REJECTED` (proteção intencional, não é defeito). Rodar só os cenários estáticos: `node --test --test-name-pattern="every private page|login and layout" tests/private-access.test.cjs tests/real-login.test.cjs`.
+- Finais de linha: `.gitattributes` força LF (`* text=auto eol=lf`, imagens `binary`). Hashes e fixtures em `docs/` assumem LF; nunca recalcule um hash sem provar que a diferença é só de fim de linha (blob do índice idêntico).
 
 ## 9. Fluxo Git
 

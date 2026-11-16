@@ -27,3 +27,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 /lib/generated/prisma
+
+# relatórios locais de execução (homologação/ensaios) — não versionar
+/docs/*/run.json
+/docs/*/run-*.json
+/docs/*/integration.tap
+/docs/*/regression.json
+/docs/auth-homologation/initial-preparation.json
+/docs/catalogo/local-*.json
+/docs/producao-migracao/resultados/

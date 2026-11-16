@@ -83,8 +83,9 @@ async function createAdmin(db, createAuth, email, password, additional = false) 
     await tx.$executeRawUnsafe('SELECT pg_advisory_xact_lock(61420317)');
     if (!additional && await tx.user.count({ where: { role: 'ADMIN' } })) throw new Error('LOCAL_ADMIN_ALREADY_EXISTS');
     if (await tx.user.findUnique({ where: { email } })) throw new Error('EXISTING_ACCOUNT_REFUSED');
+    // Server-side only: public sign-up stays closed in the application configuration.
     const auth = createAuth(tx, { secret: randomBytes(48).toString('base64url'),
-      baseURL: 'http://127.0.0.1:3000', secureCookies: false });
+      baseURL: 'http://127.0.0.1:3000', secureCookies: false, allowSignUp: true });
     const result = await auth.api.signUpEmail({ body: { name: 'Administrador local de testes', email, password } });
     const user = await tx.user.findUniqueOrThrow({ where: { id: result.user.id } });
     const account = await tx.account.findFirst({ where: { userId: user.id, providerId: 'credential' } });

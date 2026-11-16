@@ -88,9 +88,17 @@ test('every private page has server authorization before rendering; visual marku
     // Explicit catalog extraction; exact commercial values and markup checked separately.
     if (['app/materiais/page.tsx', 'components/materials/MaterialsCarousel.tsx', 'components/library/MaterialLibraryCard.tsx'].includes(file)) continue;
     if (file === 'prisma/schema.prisma') {
-      // Only the additive Lesson schema is authorized; strip it and compare the original hash.
+      // Only the additive Lesson and Material catalog schemas are authorized; strip them and compare the
+      // original hash. The catalog block must equal the reviewed proposal exactly (same rule as material-catalog).
       const source = fs.readFileSync(path.join(root, file), 'utf8');
-      const restored = source.replace(/enum LessonStatus \{[^}]+\}\r?\n\r?\nmodel Lesson \{[^}]+\}\r?\n\r?\n/, '');
+      let restored = source.replace(/enum LessonStatus \{[^}]+\}\r?\n\r?\nmodel Lesson \{[^}]+\}\r?\n\r?\n/, '');
+      const marker = '\n// Catalog models: applied only to the explicitly authorized local test database.';
+      const start = restored.indexOf(marker);
+      if (start !== -1) {
+        const proposal = fs.readFileSync(path.join(root, 'prisma/proposals/materials.prisma'), 'utf8');
+        assert.equal(restored.slice(start + 1), proposal.replace('// Proposal fragment only. Not loaded by the application. Migration not approved.', marker.slice(1)), 'Material schema differs from reviewed proposal');
+        restored = restored.slice(0, start);
+      }
       assert.equal(createHash('sha256').update(restored).digest('hex'), hash, 'Existing Prisma schema changed');
       continue;
     }
@@ -114,9 +122,10 @@ test('private page entry points and direct auth API with isolated PostgreSQL', a
     const { createAuthorization } = await load('authorization-core');
     const { createPageAccess } = await load('page-access-core');
     const { handleAuthRequest } = await load('http');
-    const auth = createServerAuth(db, readAuthEnvironment({
+    // Fixtures are created through real sign-up; only this test instance opts in.
+    const auth = createServerAuth(db, { ...readAuthEnvironment({
       BETTER_AUTH_SECRET: randomBytes(48).toString('base64url'), BETTER_AUTH_URL: 'http://127.0.0.1:3000', NODE_ENV: 'test',
-    }));
+    }), allowSignUp: true });
     const password = randomBytes(32).toString('base64url');
     const api = async (endpoint, body, cookie) => {
       const response = await handleAuthRequest(new Request(`http://127.0.0.1:3000/api/auth/${endpoint}`, {

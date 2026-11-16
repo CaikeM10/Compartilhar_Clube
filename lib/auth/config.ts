@@ -19,8 +19,14 @@ export function readAuthEnvironment(env: NodeJS.ProcessEnv) {
   return { secret, baseURL: url.origin, secureCookies: url.protocol === "https:" };
 }
 
+/**
+ * `allowSignUp` exists only for trusted server-side code (provisioning scripts, isolated tests).
+ * `readAuthEnvironment` never sets it, so the application's public endpoint refuses sign-up.
+ */
+export type ServerAuthEnvironment = ReturnType<typeof readAuthEnvironment> & { allowSignUp?: boolean };
+
 /** Dependency injection is for isolated integration tests; never accepts browser input. */
-export function createServerAuth(db: PrismaClient, environment: ReturnType<typeof readAuthEnvironment>) {
+export function createServerAuth(db: PrismaClient, environment: ServerAuthEnvironment) {
   return betterAuth({
     appName: "Compartilhar Clube",
     baseURL: environment.baseURL,
@@ -28,7 +34,8 @@ export function createServerAuth(db: PrismaClient, environment: ReturnType<typeo
     secret: environment.secret,
     trustedOrigins: [environment.baseURL],
     database: prismaAdapter(db, { provider: "postgresql" }),
-    emailAndPassword: { enabled: true },
+    // Public self-registration is closed; accounts are provisioned server-side.
+    emailAndPassword: { enabled: true, disableSignUp: environment.allowSignUp !== true },
     user: {
       additionalFields: {
         role: { type: ["STUDENT", "ADMIN"], defaultValue: "STUDENT", required: false, input: false, returned: false },
