@@ -29,6 +29,8 @@ function loadPage(file, requirePageAccess) {
     // Query isolation and real Prisma behavior have dedicated dashboard tests.
     if (name === '@/lib/student/subscription') return { getStudentSubscription: async () => ({ kind: 'none' }) };
     if (name === '@/lib/admin/dashboard') return { getAdminDashboard: async () => ({ kind: 'unavailable' }) };
+    // Users page reads real users after the page guard; query/mapping covered by admin-users.test.cjs.
+    if (name === '@/lib/admin/users') return { getAdminUsers: async () => ({ kind: 'unavailable' }) };
     if (name === '@/lib/materials/catalog') return { materials: require('../lib/materials/catalog.json') };
     // Material pages (Etapas C/D) read through the persistence layer. Here persistence is disabled, so the
     // pages render their read-only/static variants, always after the real authorization guard.
@@ -72,6 +74,10 @@ test('every private page has server authorization before rendering; visual marku
       assert.match(source, /getAdminDashboard\(\)/);
       assert.doesNotMatch(source, />156<|>24<|>120<|89%/);
       assert.match(source, /sm:grid-cols-2 xl:grid-cols-4/);
+    } else if (file === 'app/admin/usuarios/page.tsx') {
+      // Explicitly authorized: fictional users replaced by a read-only, admin-guarded query.
+      assert.match(source, /getAdminUsers\(\)/);
+      assert.doesNotMatch(source, /Maria Silva|João Santos|Ana Costa|maria\.silva|Ver detalhes/);
     } else if (file !== 'app/aluno/dashboard/page.tsx') {
       assert.equal(normalized, baseline.pages[file].jsx, `Visual markup changed: ${file}`);
     } else {
