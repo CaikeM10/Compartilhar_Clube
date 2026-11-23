@@ -326,7 +326,7 @@ Script: `scripts/provision-production-account.cjs`, com os modos `admin` e `stud
 ### Garantias
 
 - **Sem `.env`, sem segredos na saída.** A conexão, o nome, o e-mail e a senha são digitados em **entrada oculta**: nunca em argumento, variável de ambiente, arquivo ou log. A saída mostra só o id e o papel.
-- **Destino confirmado.** Só aceita conexão Neon **direta** (sem `-pooler`) com TLS (`sslmode` obrigatório, validado por `scripts/neon-target.cjs`). O operador redigita o nome do banco e o id do endpoint. A checagem do schema de auth, só leitura, acontece antes de qualquer dado pessoal ser pedido.
+- **Destino confirmado.** Só aceita conexão Neon **direta** (sem `-pooler`) com `sslmode=require`; o script acrescenta `sslaccept=strict` (certificado e host verificados) e recusa `verify-full`/`verify-ca`, que o Prisma 5.10 trata como `prefer` (ver "Validação de TLS" abaixo). O operador redigita o nome do banco e o id do endpoint. A checagem do schema de auth, só leitura, acontece antes de qualquer dado pessoal ser pedido.
 - **Só conta nova.** E-mail existente, em qualquer combinação de maiúsculas, é recusado (`EMAIL_ALREADY_REGISTERED`). No modo `student`, um e-mail com pagamento antigo exige análise humana (`EXISTING_FINANCIAL_RECORD_REVIEW_REQUIRED`). Nenhuma conta existente é alterada: impressões digitais de todos os outros usuários e credenciais, e de `plans`, `subscriptions` e `payments`, precisam ser idênticas no fim. Caso contrário, `OTHER_ACCOUNTS_CHANGED` e rollback.
 - **Credenciais só pelo Better Auth.** Cadastro no servidor (mesmo hash scrypt), habilitado apenas na instância deste processo; o cadastro público da aplicação continua fechado. Depois, um **login real** (`signInEmail`) prova a credencial antes de concluir, e as sessões dessa prova são apagadas.
 - **Uma transação PostgreSQL para tudo.** O Better Auth recebe apenas o cliente de transação interativa do Prisma. O adaptador dele só abre transação própria se a opção `transaction` estiver ligada (não está) ou se o cliente tiver `$transaction`, e o Prisma 5 remove esse método do cliente de transação. Toda escrita do Better Auth acontece dentro da transação ou falha. Isso é conferido em tempo de execução (`TRANSACTION_CLIENT_REQUIRED`) e fixado por um teste de contrato contra o código instalado, que falha se uma atualização do Better Auth ou do Prisma mudar esse comportamento.
@@ -380,6 +380,73 @@ Script: `scripts/provision-production-account.cjs`, com os modos `admin` e `stud
 
 - **Conta criada por engano:** não existe exclusão pela aplicação (`deleteUser` desligado, FKs `RESTRICT`). O caminho seguro é desativar a conta (`disabledAt`), o que bloqueia login e sessões existentes, por um procedimento próprio e autorizado. Como alternativa, comparar com a branch de backup. Nunca apagar linhas à mão.
 - **Senha esquecida:** ainda não existe redefinição por e-mail (pendente). Não alterar credenciais diretamente no banco.
+
+### Ensaio em branch Neon descartável: `scripts/neon-account-rehearsal.cjs` (preparado; ainda não executado)
+
+Roda **no terminal do operador** (entrada oculta; nada passa pelo chat). Antes de qualquer escrita, recusa e para (`fail closed`) se:
+- a branch se chamar `production`, `main`, `prod` ou `master`;
+- o id do endpoint de **production** (copiado do console Neon) não for informado ou for igual ao do destino;
+- a conexão for pooler, local ou sem `sslmode=require`;
+- o nome do banco e o endpoint não forem redigitados iguais;
+- **o TLS do cliente até o Neon não for comprovado**, antes de qualquer SQL (`scripts/neon-tls.cjs`, ver abaixo);
+- numa transação `READ ONLY`, o banco for outro, o schema não for `public`, a sessão não for TLS nem o salto interno do proxy Neon, o destino for réplica de leitura, o servidor não for Neon ou o schema de auth não estiver migrado.
+
+O operador revisa as evidências impressas e digita `ENSAIO`.
+
+#### Validação de TLS (corrigida em 2026-11-19)
+
+**Problema.** A versão anterior exigia `pg_stat_ssl.ssl = true` e falhava com `TARGET_TLS_NOT_ACTIVE`. No Neon, o cliente fala com um **proxy**; o Postgres só enxerga o trecho interno proxy → compute, que não usa TLS. Por isso `pg_stat_ssl` mostra `ssl = false` e um endereço privado mesmo quando a conexão do cliente é TLS. O diagnóstico somente leitura `node scripts/neon-tls-diagnostic.cjs`, executado na branch `ensaio-contas-20261118`, retornou `CHECK_MEASURES_PROXY_HOP_CONNECTION_IS_TLS`.
+
+**Comportamento efetivo do Prisma 5.10.** Medido offline contra um servidor falso em 127.0.0.1 com certificados descartáveis (`tests/prisma-tls-behavior.test.cjs`):
+
+| URL | Servidor recusa TLS | Certificado autoassinado | Cadeia válida, outro host |
+|---|---|---|---|
+| `sslmode=require` | recusa | **aceita** | — |
+| `sslmode=require&sslaccept=strict` | recusa | recusa | recusa |
+| `sslmode=verify-full` ou `verify-ca` | **conecta sem TLS** | **aceita** | — |
+
+`verify-full` e `verify-ca` não existem no Prisma e equivalem a `prefer`. Por isso `scripts/neon-target.cjs` (usado pelo ensaio e pelos dois scripts `provision-production-*`) agora:
+- aceita apenas `sslmode=require`, sem repetição do parâmetro;
+- acrescenta `sslaccept=strict` à URL entregue ao Prisma e recusa qualquer outro valor;
+- recusa `sslcert`, `sslidentity` e `sslpassword`, para usar apenas o repositório de certificados do sistema.
+
+**Prova exigida antes de qualquer SQL** (todas as condições; qualquer falha encerra o ensaio sem escrita):
+1. a URL do Prisma tem `sslmode=require&sslaccept=strict` (`TARGET_TLS_DRIVER_NOT_STRICT`);
+2. sondagem TLS no mesmo host: o Neon responde ao pedido de SSL e o handshake TLS 1.2 ou superior valida cadeia e nome do host (`TARGET_TLS_NOT_ACTIVE` / `TARGET_TLS_CERTIFICATE_UNVERIFIED`). A sondagem não envia usuário, banco nem senha;
+3. sondagem sem TLS: o Neon recusa uma conexão sem TLS feita com um usuário fictício e sem senha (`TARGET_ACCEPTS_PLAINTEXT` / `TARGET_PLAINTEXT_REFUSAL_UNPROVEN`). Se o servidor pedir senha, o socket é fechado sem responder.
+
+Depois, na transação somente leitura, `pg_stat_ssl` e `pg_stat_activity` da própria sessão são lidos. São aceitos só `ssl = true` ou `ssl = false` vindo de endereço privado num servidor Neon (o salto do proxy). Um endereço público sem TLS continua bloqueando com `TARGET_TLS_NOT_ACTIVE`. As evidências impressas trazem `tls.client` (protocolo, cifra, certificado e host verificados, recusa sem TLS) e `tls.session`.
+
+**Fora do escopo desta correção:** a `DATABASE_URL` da aplicação na Vercel usa `sslmode=require` sem `sslaccept=strict`. Pelo contrato acima, essa conexão não valida o certificado. Mudar isso exige decisão e autorização à parte.
+
+**Isolamento:** uma branch Neon é uma cópia copy-on-write; escritas nela não chegam à branch de origem. A ferramenta comprova que o destino **não é o endpoint de production**, mas não lê a production, o que não está autorizado. A confirmação de que o endpoint pertence à branch de ensaio vem do console Neon (página da branch → Compute → endpoint id).
+
+**O que executa**, com identidades fictícias `ensaio-…@example.invalid` e senhas aleatórias geradas e mantidas só em memória:
+1. **Rollback em 5 pontos.** Cada um confere que os dados preexistentes ficaram idênticos e que nenhuma conta de ensaio sobrou:
+   - falha no login de prova;
+   - falha depois das escritas do Better Auth (usuário, credencial e sessão);
+   - falha depois da promoção a ADMIN;
+   - transação expirada (35 s);
+   - **processo morto (`SIGKILL`)** no meio da transação, aguardando a liberação da trava consultiva.
+2. **Duplicidade e contagem.** E-mail preexistente em MAIÚSCULAS e contagem de ADMIN errada: ambos recusados antes de o Better Auth rodar.
+3. **Concorrência em duas conexões:**
+   - mesmo e-mail de aluno duas vezes: 1 STUDENT criado e 1 `EMAIL_ALREADY_REGISTERED`;
+   - dois ADMIN simultâneos: 1 ADMIN criado e 1 `ADMIN_COUNT_CHANGED_REVIEW_REQUIRED`.
+
+   Essas execuções criam **o ADMIN fictício e o STUDENT fictício**. Depois, o e-mail do aluno em MAIÚSCULAS é recusado.
+4. **Login real pelo Better Auth**, com a configuração da aplicação:
+   - o cadastro público tem de responder `EMAIL_PASSWORD_SIGN_UP_DISABLED`; senha errada dá `INVALID_EMAIL_OR_PASSWORD`;
+   - com o **cookie de sessão real**, passa pelos guards de verdade (`createAuthorization`, `createPageAccess`, `handleAccountSession`);
+   - **ADMIN:** vai para `/admin/dashboard`; páginas admin permitidas; operações de materiais passam do guard (os dados de materiais nunca são tocados);
+   - **STUDENT:** vai para `/aluno/dashboard`; `/admin` leva a `/login?reason=access-denied`; páginas de assinante levam a `/aluno/dashboard?access=subscription-required`; operações admin dão `FORBIDDEN`; a biblioteca dá `SUBSCRIPTION_REQUIRED`.
+5. **Estado final.** Usuários, credenciais e sessões preexistentes, `plans`, `subscriptions` e `payments` idênticos; `users` e `auth_accounts` com +2; ADMIN com +1; aluno sem assinatura; exatamente 2 contas de ensaio.
+
+**Relatório:** `resultados/ensaio-contas-neon-<data>.json`, só com códigos, contagens e booleanos, e `pass: true|false`.
+
+**Passos do operador:**
+1. No console Neon: **Branches → Create branch**, origem `production`, nome `ensaio-contas-<AAAAMMDD>`. Anotar o endpoint id da nova branch e o da `production`. Copiar a conexão **direta** da branch de ensaio.
+2. No terminal local: `node scripts/neon-account-rehearsal.cjs`. Responder nome da branch, endpoint de production, conexão (oculta), banco e endpoint; revisar as evidências; digitar `ENSAIO`. Leva cerca de 1–2 minutos, por causa do caso de transação expirada.
+3. Entregar o relatório JSON para análise. Depois, **apagar a branch de ensaio** no console.
 
 ## 14. Gerenciamento de usuários no painel (preparado em 2026-11-19; **aplicado só no PostgreSQL local de testes**)
 
@@ -481,7 +548,7 @@ Uma fonte nunca altera a outra: revogar a concessão não toca a assinatura; o w
 
 1. **Banco local de teste:** aplicar o 08 e rodar o 09 — 08 ✅ aplicado em 2026-11-22. (Num banco sem o 08, o `pnpm dev` reiniciado com este código responde 503 nas áreas exclusivas para alunos **sem** assinatura paga, e os cenários de `lessons`/`student-dashboard`/`private-access`/`real-login` com banco local que chegam à verificação de acesso falham por tabela inexistente.)
 2. Homologar no app local (roteiro abaixo).
-3. **Branch Neon de ensaio:** 06 (se ainda não aplicado) → 08 → 09 → homologação no Preview.
+3. **Branch Neon de ensaio:** 06 (se ainda não aplicado) → 08 → 09 → homologação no Preview. `scripts/neon-account-rehearsal.cjs` usa o guard real: rodá-lo só com o 08 aplicado na branch.
 4. **Produção:** backup → 06 (se ainda não aplicado) → 08 → 09 → **só então** publicar o código → homologar.
    - Publicar o código antes do 08 faz alunos sem assinatura paga receberem 503 (os pagantes não são afetados, porque a assinatura é lida primeiro).
 

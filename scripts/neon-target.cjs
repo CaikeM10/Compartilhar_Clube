@@ -11,8 +11,14 @@ function parseRemoteTarget(value) {
   if (!url.hostname || LOCAL_HOSTS.has(url.hostname)) throw new Error('REMOTE_TARGET_MUST_BE_REMOTE');
   // Interactive transactions and advisory locks need a direct (non-pooled) connection.
   if (url.hostname.split('.')[0].endsWith('-pooler')) throw new Error('REMOTE_TARGET_USE_DIRECT_CONNECTION');
-  const sslmode = url.searchParams.get('sslmode');
-  if (!['require', 'verify-ca', 'verify-full'].includes(sslmode || '')) throw new Error('REMOTE_TARGET_SSL_REQUIRED');
+  // Prisma 5.10 honours only disable/prefer/require; "verify-ca"/"verify-full" silently behave like "prefer"
+  // (plaintext fallback, any certificate). TLS verification needs sslaccept=strict (see scripts/neon-tls.cjs).
+  const params = url.searchParams;
+  if (params.getAll('sslmode').length !== 1 || params.get('sslmode') !== 'require') throw new Error('REMOTE_TARGET_SSL_REQUIRED');
+  if (params.getAll('sslaccept').length > 1 || (params.has('sslaccept') && params.get('sslaccept') !== 'strict')) throw new Error('REMOTE_TARGET_SSL_VERIFICATION_REQUIRED');
+  // Only the system trust store: no custom CA, client certificate or identity file.
+  if (['sslcert', 'sslidentity', 'sslpassword'].some(name => params.has(name))) throw new Error('REMOTE_TARGET_SSL_CUSTOM_TRUST_REFUSED');
+  params.set('sslaccept', 'strict');
   const database = decodeURIComponent(url.pathname.replace(/^\//, ''));
   if (!database || database.includes('/')) throw new Error('REMOTE_TARGET_DATABASE_REQUIRED');
   if (url.searchParams.has('schema') && url.searchParams.get('schema') !== 'public') throw new Error('REMOTE_TARGET_SCHEMA_MUST_BE_PUBLIC');

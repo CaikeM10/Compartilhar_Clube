@@ -157,6 +157,24 @@ test('remote target: direct TLS connection only; local, pooled and non-TLS refus
   assert.throws(() => parseRemoteTarget('postgresql://u:p@ep-x.neon.tech/neondb?sslmode=require&schema=other'), /SCHEMA_MUST_BE_PUBLIC/);
 });
 
+test('remote target: Prisma-effective TLS only (sslmode=require + sslaccept=strict, system trust store)', () => {
+  const ok = new URL(parseRemoteTarget('postgresql://u:p@ep-cool-x-123.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require').url);
+  assert.equal(ok.searchParams.get('sslmode'), 'require');
+  assert.equal(ok.searchParams.get('sslaccept'), 'strict');
+  assert.equal(ok.searchParams.get('channel_binding'), 'require');
+  assert.equal(new URL(parseRemoteTarget('postgresql://u:p@ep-a-1.neon.tech/neondb?sslmode=require&sslaccept=strict').url).searchParams.getAll('sslaccept').length, 1);
+  // Prisma 5.10 treats verify-ca/verify-full as "prefer" (plaintext fallback, no certificate check): refused.
+  for (const mode of ['verify-full', 'verify-ca', 'prefer', 'disable', 'allow', 'REQUIRE']) {
+    assert.throws(() => parseRemoteTarget(`postgresql://u:p@ep-x.neon.tech/neondb?sslmode=${mode}`), /SSL_REQUIRED/, mode);
+  }
+  assert.throws(() => parseRemoteTarget('postgresql://u:p@ep-x.neon.tech/neondb?sslmode=require&sslmode=disable'), /SSL_REQUIRED/);
+  assert.throws(() => parseRemoteTarget('postgresql://u:p@ep-x.neon.tech/neondb?sslmode=require&sslaccept=accept_invalid_certs'), /SSL_VERIFICATION_REQUIRED/);
+  assert.throws(() => parseRemoteTarget('postgresql://u:p@ep-x.neon.tech/neondb?sslmode=require&sslaccept=strict&sslaccept=accept_invalid_certs'), /SSL_VERIFICATION_REQUIRED/);
+  for (const param of ['sslcert=ca.pem', 'sslidentity=id.p12', 'sslpassword=x']) {
+    assert.throws(() => parseRemoteTarget(`postgresql://u:p@ep-x.neon.tech/neondb?sslmode=require&${param}`), /SSL_CUSTOM_TRUST_REFUSED/, param);
+  }
+});
+
 test('target confirmation requires retyping database and endpoint; output never contains credentials', async () => {
   const parsed = parseRemoteTarget('postgresql://user:SECRET-PASS@ep-a-1.neon.tech/neondb?sslmode=require');
   const lines = [];

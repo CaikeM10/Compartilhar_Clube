@@ -97,6 +97,7 @@ Legados (não usar em código novo): `services/api.ts` (mock), `hooks/useResourc
 - `MaterialAsset → Material` com `onDelete: Restrict`; exclusão de material é lógica (`status = ARCHIVED`).
 - Migração de produção (Neon): proposta e ensaios em `docs/producao-migracao/` (README com status, SQL 00–03/90, resultados). Ensaio local: `node scripts/migration-rehearsal-local.cjs` (sempre ROLLBACK). Branch Neon: `scripts/neon-branch-smoke.cjs` (sempre ROLLBACK). Ensaio completo na branch Neon e login real no Preview aprovados em 2026-11-15; produção **não migrada**. Ordem obrigatória: publicar primeiro o código com cadastro fechado e só depois aplicar 01/02 (a `main` anterior, `63380a4`, tem cadastro aberto). Nada aplicado em produção sem autorização.
 - Materiais em produção: `docs/producao-migracao/04-materials.sql` (DDL + importação dos 15), `05-…-somente-leitura.sql` (trava antes de ligar `MATERIALS_PERSISTENCE`) e `91-materials-reversao.sql` são **gerados** por `scripts/material-production-sql.cjs` a partir do catálogo (não editar à mão; `tests/material-production-sql.test.cjs` compara). Nunca executados (seção 12 do README). Importação: 14 `PUBLISHED` + `material-initial-014` em `DRAFT` (sem link Hotmart); conflito ou id duplicado aborta tudo (`MATERIAL_IMPORT_CONFLICT`/`DUPLICATE_MATERIAL_ID`).
+- TLS para Neon (scripts de operador): `scripts/neon-target.cjs` só aceita `sslmode=require` e entrega ao Prisma a URL com `sslaccept=strict`. No Prisma 5.10, `require` sozinho não valida o certificado, e `verify-full`/`verify-ca` equivalem a `prefer` (contrato em `tests/prisma-tls-behavior.test.cjs`). `pg_stat_ssl` mostra `ssl = false` atrás do proxy Neon e **não** prova ausência de TLS; a prova é do lado do cliente (`scripts/neon-tls.cjs`: handshake verificado + recusa sem TLS) antes de qualquer SQL. Diagnóstico somente leitura: `node scripts/neon-tls-diagnostic.cjs`.
 - Proibido: `prisma migrate reset`, `prisma db push` automático, `DROP`/`TRUNCATE`/deleções em massa, qualquer escrita no Neon/produção. Mudanças de schema = proposta SQL revisável e não destrutiva, aplicada só com autorização.
 
 ## 7. Segurança e isolamento de ambientes
@@ -111,7 +112,7 @@ Legados (não usar em código novo): `services/api.ts` (mock), `hooks/useResourc
 
 - Testes unitários: `node --test tests/<arquivo>.test.cjs` (Node `node:test` + `assert/strict`; transpilam TS com `typescript.transpileModule`, sem banco). Não há script `test` nem Jest/Vitest.
   - **Atenção:** `lessons` e `student-dashboard` têm cenários que conectam ao banco local quando `.env.auth-test.local` existe. Sem autorização para o banco local, rodar com `--test-skip-pattern="local PostgreSQL CRUD|persisted local roles|real authorized local PostgreSQL"`.
-  - Seguros sem banco: `material-*.test.cjs`, `materials-carousel`, `private-access`, `lessons`, `auth-preparation`, `auth-test-safety`, `real-login`, `admin-dashboard`, `student-dashboard`, `auth-signup-closed`, `provision-admin`, `neon-branch-smoke`, `admin-users`, `admin-user-management`, `account-password`, `principal-admin-operator`, `admin-users-sql`, `manual-access`, `manual-access-sql`.
+  - Seguros sem banco: `material-*.test.cjs`, `materials-carousel`, `private-access`, `lessons`, `auth-preparation`, `auth-test-safety`, `real-login`, `admin-dashboard`, `student-dashboard`, `auth-signup-closed`, `provision-admin`, `neon-branch-smoke`, `neon-tls`, `neon-tls-diagnostic`, `neon-account-rehearsal`, `prisma-tls-behavior`, `admin-users`, `admin-user-management`, `account-password`, `principal-admin-operator`, `admin-users-sql`, `manual-access`, `manual-access-sql` (os dois que usam certificados geram certificados descartáveis com `openssl` e são pulados sem ele; só usam 127.0.0.1). `tests/tls-lab.cjs` é auxiliar, não teste.
   - Regressão de auth com banco local (preserva todos os registros): `node scripts/local-auth-regression.cjs`.
   - Integração (`auth-integration`, `auth-server`, `local-auth-*`) exigem `.env.auth-test.local` e `--test-concurrency=1`; não rodar contra a conta manual preservada.
 - Webhook: `npm run test:webhook`.
@@ -179,6 +180,7 @@ Legados (não usar em código novo): `services/api.ts` (mock), `hooks/useResourc
 - Links não protegidos citados em `docs/private-access/README.md` (Google Forms, convite WhatsApp).
 
 ### Riscos conhecidos (não corrigidos — exigem decisão)
+- `DATABASE_URL` da aplicação (Vercel) usa `sslmode=require` sem `sslaccept=strict`: TLS sem validação de certificado no Prisma 5.10. Alterar exige autorização (variáveis da Vercel).
 - Webhook exige `external_reference`, que `create-payment` não envia.
 - `create-payment` usa URL ngrok e preço R$ 1 em desenvolvimento.
 - Item 014 do catálogo tem `checkoutUrl` vazio (link "Comprar" recarrega a página).
