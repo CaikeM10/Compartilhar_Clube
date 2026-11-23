@@ -29,7 +29,8 @@ test('all administrative service operations reject anonymous, STUDENT and disabl
 });
 test('ADMIN creation stays DRAFT and rejects injected IDs, roles, assets and invalid commercial data', async () => {
   let writes = 0;
-  const service = createMaterialService({ material: { create: async ({ data }) => { writes++; return data; } } }, allow);
+  const knownCovers = require('../lib/materials/catalog.json').map(item => item.image);
+  const service = createMaterialService({ material: { create: async ({ data }) => { writes++; return data; } } }, allow, undefined, { knownCovers });
   assert.equal((await service.create(input())).status, 'DRAFT');
   for (const patch of [{ id: 'injected' }, { role: 'ADMIN' }, { assets: [] }, { status: 'PUBLISHED' }, { priceCents: -1 }, { checkoutUrl: 'javascript:alert(1)' }, { coverImage: '/../secret.png' }]) {
     await assert.rejects(service.create({ ...input(), ...patch }), e => e.status === 400);

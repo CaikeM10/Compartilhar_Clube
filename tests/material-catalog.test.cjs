@@ -10,6 +10,8 @@ const root = path.resolve(__dirname, '..');
 const baseline = require('../docs/catalogo/baseline.json');
 const materials = require('../lib/materials/catalog.json');
 const { initialRecords, planImport } = require('../scripts/material-catalog-import-plan.cjs');
+const { stripAdminUsersSchema } = require('./admin-users-schema.cjs');
+const { stripManualAccessSchema } = require('./manual-access-schema.cjs');
 function loadSource(source, imports = require) {
   const code = ts.transpileModule(source.replace('import "server-only";', ''), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
@@ -46,6 +48,13 @@ ${baseline.publicMarkup}`, publicImports(pagesWith(disabledMaterials))).default;
     const Page = load('app/materiais/page.tsx', publicImports(pagesWith(server))).default;
     assert.equal(renderToStaticMarkup(await Page()), expected);
   }
+  // Expected effect after the production import: listPublished() returns only PUBLISHED rows, so the storefront shows
+  // 14 cards and material-initial-014 (no Hotmart link, imported as DRAFT) disappears until an admin adds its link.
+  const publishedOnly = { getMaterials: () => ({ listPublished: async () => initialRecords().filter(row => row.status === 'PUBLISHED') }) };
+  const html = renderToStaticMarkup(await load('app/materiais/page.tsx', publicImports(pagesWith(publishedOnly))).default());
+  assert.equal((html.match(/Comprar material/g) ?? []).length, 14);
+  assert.ok(!html.includes(materials[13].title) && expected.includes(materials[13].title));
+  for (const item of materials.filter(item => item.checkoutUrl)) assert.ok(html.includes(item.checkoutUrl));
 });
 
 test('carousel derives its exact selection, titles and image names from stable catalog IDs', () => {
@@ -54,25 +63,36 @@ test('carousel derives its exact selection, titles and image names from stable c
   for (const item of catalog.carouselMaterials) for (const width of [260, 520, 780]) {
     assert.ok(fs.existsSync(path.join(root, 'public/materials-covers', `${item.image}-${width}.webp`)));
   }
+  // Etapa 5: the responsive-cover manifest must match the files on disk exactly (both directions, all widths),
+  // so the carousel never emits a srcSet URL that does not exist.
+  const manifest = require('../lib/materials/carousel-covers.json');
+  const onDisk = fs.readdirSync(path.join(root, 'public/materials-covers'));
+  const fromDisk = [...new Set(onDisk.map(file => file.replace(/-(260|520|780)\.webp$/, '')))];
+  assert.deepEqual([...manifest].sort(), fromDisk.sort());
+  assert.equal(onDisk.length, manifest.length * 3);
+  assert.deepEqual([...manifest].sort(), catalog.carouselMaterials.map(item => item.image).sort());
 });
 
-test('import planning is idempotent, preserves changed existing records and never keys by title or checkout URL', () => {
+test('import planning is idempotent, aborts on changed existing records and never keys by title or checkout URL', () => {
   const rows = initialRecords();
   const first = planImport([]);
   assert.deepEqual(first.create, rows);
   const second = planImport(first.create);
   assert.equal(second.create.length, 0); assert.equal(second.preserved.length, 15);
-  assert.equal(second.conflicts.length, 0);
+  assert.deepEqual(second.extras, []);
+  // Etapa 3 (approved): a differing existing record aborts the whole import instead of being silently kept.
   rows[0] = { ...rows[0], title: 'Changed only in memory' };
   const snapshot = JSON.stringify(rows);
-  const conflict = planImport(rows);
-  assert.deepEqual(conflict.conflicts, [rows[0].id]); assert.equal(conflict.create.length, 0);
+  assert.throws(() => planImport(rows), error => error.code === 'MATERIAL_IMPORT_CONFLICT'
+    && JSON.stringify(error.conflicts) === JSON.stringify([{ id: rows[0].id, fields: ['title'] }]));
   assert.equal(JSON.stringify(rows), snapshot);
   assert.equal(new Set(first.create.map(row => row.id)).size, 15);
   for (const [index, row] of first.create.entries()) {
     assert.equal(`R$ ${(row.priceCents / 100).toFixed(2).replace('.', ',')}`, materials[index].price);
     assert.equal(row.checkoutUrl, materials[index].checkoutUrl);
-    assert.equal(row.description, null); assert.equal(row.status, 'PUBLISHED');
+    assert.equal(row.description, null);
+    // Materials without a Hotmart link are imported as DRAFT (only material-initial-014 today).
+    assert.equal(row.status, materials[index].checkoutUrl ? 'PUBLISHED' : 'DRAFT');
   }
   assert.throws(() => planImport([rows[0], rows[0]]), /DUPLICATE_MATERIAL_ID/);
 });
@@ -85,6 +105,7 @@ const disabledMaterials = { getMaterials: () => { throw new MaterialError(503, '
 function pagesWith(server) {
   return load('lib/materials/pages.ts', name => ({
     './server': server, './service-core': { MaterialError }, './catalog': { materials }, './price': load('lib/materials/price.ts'),
+    './carousel-core': load('lib/materials/carousel-core.ts', file => require(path.join(root, 'lib/materials', file))),
   })[name] ?? assert.fail(`unexpected import ${name}`));
 }
 function publicImports(pages) {
@@ -146,6 +167,11 @@ test('real server authorization blocks STUDENT admin entry and expired subscript
       assert.equal(args.where.status, 'active');
       return active ? { id: 'memory-only' } : null;
     } },
+    // Without a paid subscription the guard reads the manual grant with the same instant; none here.
+    manualAccessGrant: { findFirst: async args => {
+      assert.deepEqual(args.where, { userId: 'memory-only', revokedAt: null, startsAt: { lte: at }, endsAt: { gt: at } });
+      return null;
+    } },
   }, async () => new Headers(), () => at);
   const imports = visualImports(access => access === 'admin' ? guards.requireAdmin() : guards.requireActiveSubscription());
   const Admin = load('app/admin/recursos/page.tsx', imports).default;
@@ -166,8 +192,10 @@ test('authentication, payments, lessons, schema and approved layouts remain byte
       if (start !== -1) {
         const proposal = fs.readFileSync(path.join(root, 'prisma/proposals/materials.prisma'), 'utf8');
         assert.equal(source.slice(start + 1), proposal.replace('// Proposal fragment only. Not loaded by the application. Migration not approved.', marker.slice(1)));
-        bytes = Buffer.from(source.slice(0, start));
       }
+      // Manual access grants, then admin user management: authorized additions only in the exact reviewed form
+      // (tests/manual-access-schema.cjs, tests/admin-users-schema.cjs).
+      bytes = Buffer.from(stripAdminUsersSchema(stripManualAccessSchema(start === -1 ? source : source.slice(0, start))));
     }
     assert.equal(createHash('sha256').update(bytes).digest('hex'), hash, file);
   }

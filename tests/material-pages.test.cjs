@@ -23,7 +23,8 @@ const authorization = load('lib/auth/authorization-core.ts', {});
 class MaterialError extends Error { constructor(status, code) { super(code); this.status = status; this.code = code; } }
 const disabled = { getMaterials: () => { throw new MaterialError(503, 'MATERIALS_PERSISTENCE_DISABLED'); } };
 const enabled = service => ({ getMaterials: () => service });
-const pagesWith = server => load('lib/materials/pages.ts', { './server': server, './service-core': { MaterialError }, './catalog': { materials: catalog }, './price': price });
+const carouselCore = load('lib/materials/carousel-core.ts', name => require(path.join(root, 'lib/materials', name)));
+const pagesWith = server => load('lib/materials/pages.ts', { './server': server, './service-core': { MaterialError }, './catalog': { materials: catalog }, './price': price, './carousel-core': carouselCore });
 
 // Rows as returned by the service, plus private columns that must never leak if a select ever widened.
 const leaky = { storageKey: 'materials/x/v1-secret.pdf', status: 'PUBLISHED', updatedAt: new Date(), assets: [{ storageKey: 'materials/secret.pdf' }] };
@@ -171,5 +172,9 @@ test('admin writes revalidate the storefront and library only after success', as
   }
   const source = fs.readFileSync(path.join(root, 'lib/materials/revalidate.ts'), 'utf8');
   assert.match(source, /revalidatePath\("\/materiais"\)/); assert.match(source, /revalidatePath\("\/aluno\/recursos"\)/);
+  // Etapa 5: the Home page (carousel) is refreshed too — the page only, never the shared layout.
+  assert.match(source, /revalidatePath\("\/"\);/);
   assert.doesNotMatch(source, /revalidatePath\("\/"\s*,\s*"layout"\)/, 'no global cache purge');
+  assert.doesNotMatch(source, /"layout"/, 'no layout-type revalidation at all');
+  assert.equal((source.match(/revalidatePath\(/g) ?? []).length, 3);
 });

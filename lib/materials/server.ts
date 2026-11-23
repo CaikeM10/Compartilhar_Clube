@@ -3,6 +3,10 @@ import { getAuthInfrastructure } from "@/lib/auth/server";
 import { requireAdmin, requireActiveSubscription } from "@/lib/auth/authorization";
 import { getPrivateStorage } from "@/lib/storage/server";
 import { createMaterialService, MaterialError } from "./service-core";
+import { materials as catalog } from "./catalog";
+
+// Same image list the admin cover picker offers (app/admin/recursos/page.tsx).
+const knownCovers = Array.from(new Set(catalog.map(material => material.image)));
 
 /**
  * Explicit opt-in per environment (set only by the isolated local launcher for now).
@@ -15,5 +19,5 @@ export function assertMaterialsEnabled(env: NodeJS.ProcessEnv = process.env) {
 // Same shape as getLessons(): shared pool, guard runs first inside every service method.
 export function getMaterials() {
   assertMaterialsEnabled();
-  return createMaterialService(getAuthInfrastructure().db, { requireAdmin, requireActiveSubscription }, getPrivateStorage());
+  return createMaterialService(getAuthInfrastructure().db, { requireAdmin, requireActiveSubscription }, getPrivateStorage(), { knownCovers });
 }

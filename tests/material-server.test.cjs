@@ -31,6 +31,7 @@ function loadServer({ db, requireAdmin, requireActiveSubscription = requireAdmin
     if (name === '@/lib/auth/authorization') return { requireAdmin, requireActiveSubscription };
     if (name === '@/lib/storage/server') return { getPrivateStorage: () => storage.unconfiguredStorage };
     if (name === './service-core') return core;
+    if (name === './catalog') return { materials: require('../lib/materials/catalog.json') };
     throw new Error(`Unexpected import: ${name}`); // e.g. @prisma/client: no second pool
   };
   return { server: load('lib/materials/server.ts', imports), calls };

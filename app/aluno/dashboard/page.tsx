@@ -2,6 +2,8 @@ import { MemberLayout } from "@/components/layout/MemberLayout";
 import { requirePageAccess } from "@/lib/auth/page-access";
 import { getStudentSubscription } from "@/lib/student/subscription";
 import { SubscriptionSummary } from "@/components/student/SubscriptionSummary";
+import { getStudentManualAccess } from "@/lib/student/manual-access";
+import { ManualAccessSummary } from "@/components/student/ManualAccessSummary";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +17,8 @@ import Link from "next/link";
 
 export default async function DashboardPage() {
   const { user } = await requirePageAccess("account");
-  const subscription = await getStudentSubscription();
+  // Two independent sources of access, shown separately: paid subscription and administrative grant.
+  const [subscription, manualAccess] = await Promise.all([getStudentSubscription(), getStudentManualAccess()]);
   const name = user.name?.trim();
   return (
     <>
@@ -32,6 +35,7 @@ export default async function DashboardPage() {
           </div>
 
           <SubscriptionSummary subscription={subscription} />
+          <ManualAccessSummary access={manualAccess} />
 
           {/* Novidades da Semana */}
           <Card className="gap-0 p-5 sm:p-6 border-primary/20 bg-primary/5">

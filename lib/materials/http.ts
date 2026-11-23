@@ -10,6 +10,10 @@ export { mutationBody } from "@/lib/lessons/http";
 const headers = { "Cache-Control": "private, no-store", Vary: "Cookie" };
 
 function failure(error: unknown) {
+  // Prisma unique-constraint violation (known request error P2002): a conflict, not an outage. No details are echoed.
+  if ((error as { code?: unknown } | null)?.code === "P2002") {
+    return Response.json({ error: "MATERIAL_CONFLICT" }, { status: 409, headers });
+  }
   const known = error instanceof AuthorizationError || error instanceof MaterialError || error instanceof StorageError || error instanceof LessonError;
   return Response.json({ error: known ? error.code : "MATERIALS_UNAVAILABLE" }, { status: known ? error.status : 503, headers });
 }

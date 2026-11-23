@@ -28,13 +28,16 @@ test('admin aggregate queries use one instant, active interval, inclusive seven-
   const count = model => args => { queries.push({ model, args }); return Promise.resolve(0); };
   const at = new Date('2026-11-06T12:00:00Z');
   const db = { user: { count: count('user') }, subscription: { count: count('subscription') }, lesson: { count: count('lesson') },
+    manualAccessGrant: { count: count('manualAccessGrant') },
     $transaction: async (operations, options) => { assert.equal(options.isolationLevel, 'RepeatableRead'); return Promise.all(operations); } };
   const result = await createAdminDashboardReader(db, async () => {}, () => at)();
-  assert.deepEqual(result, { kind: 'ready', students: 0, activeSubscriptions: 0, expiringSubscriptions: 0, lessons: 0, publishedLessons: 0, checkedAt: at.toISOString() });
+  assert.deepEqual(result, { kind: 'ready', students: 0, activeSubscriptions: 0, activeManualAccess: 0, expiringSubscriptions: 0, lessons: 0, publishedLessons: 0, checkedAt: at.toISOString() });
   assert.deepEqual(queries, [
     { model: 'user', args: { where: { role: 'STUDENT' } } },
     { model: 'subscription', args: { where: { status: 'active', startDate: { lte: at }, endDate: { gt: at } } } },
     { model: 'subscription', args: { where: { status: 'active', startDate: { lte: at }, endDate: { gt: at, lte: new Date('2026-11-13T12:00:00Z') } } } },
+    // Separate metric: valid manual grants of enabled students, same instant; never counted as subscriptions.
+    { model: 'manualAccessGrant', args: { where: { revokedAt: null, startsAt: { lte: at }, endsAt: { gt: at }, user: { role: 'STUDENT', disabledAt: null } } } },
     { model: 'lesson', args: undefined }, { model: 'lesson', args: { where: { status: 'PUBLISHED' } } },
   ]);
   db.$transaction = async () => { throw new Error('private database details'); };
@@ -55,9 +58,10 @@ test('admin page distinguishes unavailable from zero, contains no fictional acti
   let html = renderToStaticMarkup(await Page());
   assert.match(html, /Indicadores indisponíveis/);
   assert.doesNotMatch(html, /Alunos cadastrados|private database/);
-  data = { kind: 'ready', students: 0, activeSubscriptions: 0, expiringSubscriptions: 0, lessons: 0, publishedLessons: 0, checkedAt: new Date().toISOString() };
+  data = { kind: 'ready', students: 0, activeSubscriptions: 3, activeManualAccess: 7, expiringSubscriptions: 0, lessons: 0, publishedLessons: 0, checkedAt: new Date().toISOString() };
   html = renderToStaticMarkup(await Page());
   assert.match(html, /Alunos cadastrados/); assert.match(html, /0 publicadas/);
+  assert.match(html, />3<\/p><h2[^>]*>Assinaturas ativas/); assert.match(html, />7<\/p><h2[^>]*>Acessos manuais ativos/);
   assert.doesNotMatch(html, /156|89%|Maria Silva|João Santos|15 novos usuários|Taxa de engajamento/);
   allowed = false;
   await assert.rejects(Page(), /FORBIDDEN/);

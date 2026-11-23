@@ -62,6 +62,7 @@ async function schemaEvidence(db) {
 }
 async function insertMissing(tx) {
   const before = await tx.$queryRawUnsafe('SELECT * FROM public.materials ORDER BY id');
+  // Throws DUPLICATE_MATERIAL_ID / MATERIAL_IMPORT_CONFLICT before any INSERT; the caller's transaction then rolls back.
   const plan = planImport(before);
   let inserted = 0;
   for (const row of plan.create) {
@@ -73,7 +74,7 @@ async function insertMissing(tx) {
   const after = await tx.$queryRawUnsafe('SELECT * FROM public.materials ORDER BY id');
   for (const row of before) assert.deepEqual(after.find(x => x.id === row.id), row);
   for (const row of initialRecords()) assert.ok(after.some(x => x.id === row.id));
-  return { inserted, preserved: plan.preserved.length, conflicts: plan.conflicts, after };
+  return { inserted, preserved: plan.preserved.length, extras: plan.extras, after };
 }
 async function run(mode) {
   const rehearse = mode === '--rehearse';
@@ -121,7 +122,7 @@ async function run(mode) {
       assert.ok(schema.constraints.every(x => x.convalidated));
       assert.equal(schema.indexes.length, 7);
       if (rehearse) throw new Error('REHEARSAL_PASSED_ROLLED_BACK');
-      return { inserted: first.inserted, preserved: first.preserved, conflicts: first.conflicts,
+      return { inserted: first.inserted, preserved: first.preserved, extras: first.extras,
         count: first.after.length, repeatedInsertions: second.inserted, orphanAssets: orphans.count, schema };
     }, { timeout: 60000 });
     const receipt = { at: new Date().toISOString(), target, mode, sqlSha256: hash(sql),
@@ -134,6 +135,8 @@ module.exports = { insertMissing, schemaEvidence };
 if (require.main === module) run(process.argv[2]).catch(error => {
   // Never expose driver errors or connection strings.
   console.error(/^[A-Z_]+$/.test(error.message || '') ? error.message : 'LOCAL_MATERIAL_OPERATION_FAILED');
+  // Conflicts list only material IDs and field names (catalog data, never credentials).
+  if (error.conflicts) console.error(JSON.stringify({ conflicts: error.conflicts }));
   console.error(JSON.stringify({ type: error.name, code: error.code,
     databaseCode: error.meta?.code,
     location: error.stack?.split('\n').find(line => line.includes('local-material-catalog.cjs:'))?.trim() }));

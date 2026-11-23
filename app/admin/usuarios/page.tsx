@@ -2,23 +2,32 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { requirePageAccess } from "@/lib/auth/page-access";
 import { getAdminUsers } from "@/lib/admin/users";
 import { Card } from "@/components/ui/card";
-import { Users, Mail, Shield, User, Ban } from "lucide-react";
+import { Users, Mail, Shield, ShieldCheck, User, Ban, KeyRound, CreditCard, CalendarCheck } from "lucide-react";
+import { NewUserDialog } from "@/components/users/NewUserDialog";
+import { UserRoleControl } from "@/components/users/UserRoleControl";
+import { ManualAccessControl } from "@/components/users/ManualAccessControl";
+import { manualAccessLabel, paidAccessLabel } from "@/lib/admin/manual-access-rules";
 
 export default async function AdminUsuariosPage() {
   const { user } = await requirePageAccess("admin");
   const result = await getAdminUsers();
+  // Display only: every action is authorized again by the server from the database.
+  const principal = user.isPrincipalAdmin;
 
   return (
     <>
       <AdminLayout viewer={user}>
         <div className="space-y-8">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2 font-display">
-              Usuários
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              Visualize os membros da plataforma
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2 font-display">
+                Usuários
+              </h1>
+              <p className="text-muted-foreground text-lg">
+                Visualize e cadastre os membros da plataforma e gerencie a liberação manual de acesso
+              </p>
+            </div>
+            {result.kind === "ready" && <NewUserDialog canCreateAdmin={principal} />}
           </div>
 
           {result.kind === "unavailable" ? (
@@ -76,7 +85,12 @@ export default async function AdminUsuariosPage() {
                                 Sem nome
                               </h3>
                             )}
-                            {usuario.role === "admin" ? (
+                            {usuario.principal ? (
+                              <span className="inline-flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full text-xs font-medium text-primary">
+                                <ShieldCheck className="w-3 h-3" />
+                                Admin principal
+                              </span>
+                            ) : usuario.role === "admin" ? (
                               <span className="inline-flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded-full text-xs font-medium text-primary">
                                 <Shield className="w-3 h-3" />
                                 Admin
@@ -93,6 +107,12 @@ export default async function AdminUsuariosPage() {
                                 Desativado
                               </span>
                             )}
+                            {usuario.mustChangePassword && (
+                              <span className="inline-flex items-center gap-1 bg-[#e1b12c]/15 px-2 py-0.5 rounded-full text-xs font-medium text-[#4a6278]">
+                                <KeyRound className="w-3 h-3" />
+                                Troca de senha pendente
+                              </span>
+                            )}
                           </div>
                           <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-muted-foreground">
                             <span className="flex items-center gap-1 min-w-0">
@@ -106,7 +126,29 @@ export default async function AdminUsuariosPage() {
                               })}
                             </span>
                           </div>
+                          {usuario.role === "student" && (
+                            <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                              <span className="inline-flex items-center gap-1 bg-muted px-2 py-0.5 rounded-full font-medium text-muted-foreground">
+                                <CreditCard className="w-3 h-3" />
+                                Assinatura paga: {paidAccessLabel(usuario.paidAccess)}
+                              </span>
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-medium ${
+                                usuario.manualAccess.status === "active" || usuario.manualAccess.status === "scheduled"
+                                  ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                                <CalendarCheck className="w-3 h-3" />
+                                Acesso manual: {manualAccessLabel(usuario.manualAccess)}
+                              </span>
+                            </div>
+                          )}
                         </div>
+                        {((principal && !usuario.principal && usuario.id !== user.id && !(usuario.disabled && usuario.role === "student")) || usuario.role === "student") && (
+                          <div className="flex-shrink-0 flex flex-col items-end gap-2">
+                            {principal && !usuario.principal && usuario.id !== user.id && !(usuario.disabled && usuario.role === "student") && (
+                              <UserRoleControl user={usuario} />
+                            )}
+                            {usuario.role === "student" && <ManualAccessControl user={usuario} />}
+                          </div>
+                        )}
                       </div>
                     </Card>
                   ))}

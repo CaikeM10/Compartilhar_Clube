@@ -8,6 +8,12 @@ export class MaterialError extends Error {
   constructor(public status: number, public code: string) { super(code); }
 }
 type Guards = { requireAdmin: () => Promise<unknown>; requireActiveSubscription: () => Promise<unknown> };
+/**
+ * knownCovers: local images that may be used as covers (the static catalog images). A cover outside this list
+ * is accepted only if some material already uses it. Default is empty: fail closed to covers already in the database.
+ */
+type Options = { knownCovers?: readonly string[] };
+type MaterialReader = Pick<PrismaClient, "material">;
 
 const orderBy = [{ displayOrder: "asc" }, { id: "asc" }] as const;
 // Asset fields safe to show to administrators. storageKey never leaves the server.
@@ -49,9 +55,16 @@ async function inspectPdf(stream: ReadableStream<Uint8Array>, expectedSize: numb
   return hash.digest("hex");
 }
 
-export function createMaterialService(db: PrismaClient, guards: Guards, storage: PrivateObjectStorage = unconfiguredStorage) {
+export function createMaterialService(db: PrismaClient, guards: Guards, storage: PrivateObjectStorage = unconfiguredStorage, options: Options = {}) {
+  const knownCovers = new Set(options.knownCovers ?? []);
   function requireStorage() {
     if (!storage.configured) throw new StorageError(503, "STORAGE_NOT_CONFIGURED");
+  }
+  /** Server-side counterpart of the admin cover picker: only existing local images, never arbitrary paths. */
+  async function assertKnownCover(client: MaterialReader, cover: string | undefined) {
+    if (cover === undefined || knownCovers.has(cover)) return;
+    const used = await client.material.findFirst({ where: { coverImage: cover }, select: { id: true } });
+    if (!used) throw new MaterialError(400, "INVALID_COVER");
   }
 
   return {
@@ -82,19 +95,26 @@ export function createMaterialService(db: PrismaClient, guards: Guards, storage:
       await guards.requireAdmin();
       const parsed = materialInput.safeParse(input);
       if (!parsed.success) throw new MaterialError(400, "INVALID_MATERIAL");
+      await assertKnownCover(db, parsed.data.coverImage);
       return db.material.create({ data: { ...parsed.data, status: "DRAFT" } });
     },
     async change(id: string, input: unknown) {
       await guards.requireAdmin();
       const parsed = materialChange.safeParse(input);
       if (!parsed.success) throw new MaterialError(400, "INVALID_MATERIAL");
+      const target = parseId(id);
       return db.$transaction(async tx => {
+        await assertKnownCover(tx, parsed.data.data.coverImage);
         // Optimistic concurrency prevents one administrator from overwriting another.
         const changed = await tx.material.updateMany({
-          where: { id, updatedAt: new Date(parsed.data.expectedUpdatedAt) }, data: parsed.data.data,
+          where: { id: target, updatedAt: new Date(parsed.data.expectedUpdatedAt) }, data: parsed.data.data,
         });
         if (changed.count !== 1) throw new MaterialError(409, "MATERIAL_CHANGED_OR_MISSING");
-        return tx.material.findUniqueOrThrow({ where: { id } });
+        const updated = await tx.material.findUniqueOrThrow({ where: { id: target } });
+        // Publication rule, checked on the resulting row so it also covers clearing the link of a published
+        // material. Throwing here rolls the whole transaction back.
+        if (updated.status === "PUBLISHED" && !updated.checkoutUrl) throw new MaterialError(422, "MATERIAL_NOT_PUBLISHABLE");
+        return updated;
       });
     },
     // Deletion is deliberately represented by status ARCHIVED through change().

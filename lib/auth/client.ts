@@ -2,7 +2,7 @@
 import { createAuthClient } from "better-auth/client";
 import type { User } from "@/lib/types";
 
-export type AccountSession = { user: User; destination: "/admin/dashboard" | "/aluno/dashboard" };
+export type AccountSession = { user: User; destination: "/admin/dashboard" | "/aluno/dashboard" | "/conta/alterar-senha" };
 
 /** Uses same-origin cookies; dependency injection is only for isolated tests. */
 export function createSessionClient(fetchImpl: typeof fetch = (...args) => fetch(...args), baseURL?: string) {
@@ -14,7 +14,7 @@ export function createSessionClient(fetchImpl: typeof fetch = (...args) => fetch
     if (!response.ok) throw new Error("AUTH_UNAVAILABLE");
     const data = await response.json();
     if (!data.user || !["admin", "student"].includes(data.user.role) ||
-        !["/admin/dashboard", "/aluno/dashboard"].includes(data.destination)) throw new Error("INVALID_SESSION_RESPONSE");
+        !["/admin/dashboard", "/aluno/dashboard", "/conta/alterar-senha"].includes(data.destination)) throw new Error("INVALID_SESSION_RESPONSE");
     return {
       user: { id: data.user.id, name: data.user.name, email: data.user.email, role: data.user.role, createdAt: new Date(data.user.createdAt) },
       destination: data.destination,

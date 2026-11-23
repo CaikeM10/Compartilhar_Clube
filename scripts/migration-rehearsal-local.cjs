@@ -41,7 +41,7 @@ function splitStatements(sql) {
 /** Rebinds a production file to the scratch schema and turns its transaction into a savepoint. */
 function adapt(file, schema, savepoint) {
   return splitStatements(fs.readFileSync(path.join(dir, file), 'utf8').replace(/\bpublic\b/g, schema)).map(statement => {
-    if (/^BEGIN(\s+TRANSACTION\s+READ\s+ONLY)?$/i.test(statement)) return `SAVEPOINT ${savepoint}`;
+    if (/^BEGIN(\s+TRANSACTION\s+READ\s+ONLY|\s+ISOLATION\s+LEVEL\s+REPEATABLE\s+READ)?$/i.test(statement)) return `SAVEPOINT ${savepoint}`;
     if (/^COMMIT$/i.test(statement)) return `RELEASE SAVEPOINT ${savepoint}`;
     if (/^ROLLBACK$/i.test(statement)) return `ROLLBACK TO SAVEPOINT ${savepoint}`;
     return statement;
@@ -208,7 +208,7 @@ async function main() {
   finally { await db.$disconnect(); }
 }
 
-module.exports = { splitStatements, adapt, rehearse };
+module.exports = { splitStatements, adapt, rehearse, run, expectFailure, seedLegacy, plain, fingerprintSql };
 if (require.main === module) main().catch(error => {
   console.error(/^[A-Z0-9_]+$/.test(error.message || '') ? error.message : `REHEARSAL_FAILED: ${String(error.meta?.message || error.code || 'unknown').slice(0, 300)}`);
   process.exitCode = 1;

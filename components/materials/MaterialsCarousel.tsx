@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { carouselMaterials as materials } from "@/lib/materials/catalog";
+import type { CarouselItem } from "@/lib/materials/carousel-core";
 
 const duration = 35000;
 
-export function MaterialsCarousel() {
+/** Data comes from the server (HomeMaterialsCarousel); this component only animates and renders it. */
+export function MaterialsCarousel({ items: materials }: { items: CarouselItem[] }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const phaseRef = useRef(0);
@@ -150,15 +151,15 @@ export function MaterialsCarousel() {
           <div key={String(copy)} className="materials-carousel-group" aria-hidden={copy || undefined} data-copy={copy}
             style={{ display: copy && manual ? "none" : "flex", flexFlow: "row nowrap", flex: "0 0 auto", gap: "2rem", paddingRight: "2rem" }}>
             {materials.map((item) => (
-              <a key={item.image} href="/materiais" tabIndex={copy ? -1 : undefined}
+              <a key={item.id} href="/materiais" tabIndex={copy ? -1 : undefined}
                 style={{ display: "block", width: 260, minWidth: 260, maxWidth: 260, flex: "0 0 260px" }}
                 className="materials-carousel-card bg-white rounded-2xl overflow-hidden border border-border/60 transition-transform duration-300 hover:scale-[1.03]">
                 <div className="relative h-[330px] overflow-hidden"
                   style={{ position: "relative", width: "100%", height: 330, overflow: "hidden" }}>
                   <img
-                    src={`/materials-covers/${item.image}-520.webp`}
-                    srcSet={[260, 520, 780].map((width) => `/materials-covers/${item.image}-${width}.webp ${width}w`).join(", ")}
-                    sizes="260px" width={4419} height={6250}
+                    src={item.src}
+                    srcSet={item.srcSet ?? undefined}
+                    sizes={item.srcSet ? "260px" : undefined} width={4419} height={6250}
                     alt={copy ? "" : item.title} loading="lazy" decoding="async" draggable={false}
                     className="w-full h-full object-cover"
                     style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }}
