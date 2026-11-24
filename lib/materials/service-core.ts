@@ -3,11 +3,19 @@ import { createHash, randomUUID } from "node:crypto";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { materialInput, materialChange, materialId, materialOrder, pdfAction, pdfRemoval, PDF_MAX_BYTES } from "./validation";
 import { StorageError, unconfiguredStorage, type PrivateObjectStorage } from "@/lib/storage/private-storage";
+import { COVER_MAX_BYTES, COVER_ROUTE, COVER_TYPES, coverStorageKey, coverTypeOfFile, inspectCoverImage, uploadedCoverFile } from "./cover-image";
 
 export class MaterialError extends Error {
   constructor(public status: number, public code: string) { super(code); }
 }
 type Guards = { requireAdmin: () => Promise<unknown>; requireActiveSubscription: () => Promise<unknown> };
+/**
+ * knownCovers: local images that may be used as covers (the static catalog images). A cover outside this list
+ * is accepted only if some material already uses it, or if it is an uploaded cover (/api/materials/covers/<sha256>.<ext>)
+ * that exists in storage. Default is empty: fail closed to covers already in the database.
+ */
+type Options = { knownCovers?: readonly string[] };
+type MaterialReader = Pick<PrismaClient, "material">;
 
 const orderBy = [{ displayOrder: "asc" }, { id: "asc" }] as const;
 // Asset fields safe to show to administrators. storageKey never leaves the server.
@@ -49,9 +57,19 @@ async function inspectPdf(stream: ReadableStream<Uint8Array>, expectedSize: numb
   return hash.digest("hex");
 }
 
-export function createMaterialService(db: PrismaClient, guards: Guards, storage: PrivateObjectStorage = unconfiguredStorage) {
+export function createMaterialService(db: PrismaClient, guards: Guards, storage: PrivateObjectStorage = unconfiguredStorage, options: Options = {}) {
+  const knownCovers = new Set(options.knownCovers ?? []);
   function requireStorage() {
     if (!storage.configured) throw new StorageError(503, "STORAGE_NOT_CONFIGURED");
+  }
+  /** Server-side counterpart of the admin cover picker: known images or validated uploads, never arbitrary paths. */
+  async function assertKnownCover(client: MaterialReader, cover: string | undefined) {
+    if (cover === undefined || knownCovers.has(cover)) return;
+    const used = await client.material.findFirst({ where: { coverImage: cover }, select: { id: true } });
+    if (used) return;
+    const file = cover.startsWith(COVER_ROUTE) ? uploadedCoverFile(cover) : null;
+    if (file && storage.configured && await storage.headObject(coverStorageKey(file))) return;
+    throw new MaterialError(400, "INVALID_COVER");
   }
 
   return {
@@ -82,19 +100,26 @@ export function createMaterialService(db: PrismaClient, guards: Guards, storage:
       await guards.requireAdmin();
       const parsed = materialInput.safeParse(input);
       if (!parsed.success) throw new MaterialError(400, "INVALID_MATERIAL");
+      await assertKnownCover(db, parsed.data.coverImage);
       return db.material.create({ data: { ...parsed.data, status: "DRAFT" } });
     },
     async change(id: string, input: unknown) {
       await guards.requireAdmin();
       const parsed = materialChange.safeParse(input);
       if (!parsed.success) throw new MaterialError(400, "INVALID_MATERIAL");
+      const target = parseId(id);
       return db.$transaction(async tx => {
+        await assertKnownCover(tx, parsed.data.data.coverImage);
         // Optimistic concurrency prevents one administrator from overwriting another.
         const changed = await tx.material.updateMany({
-          where: { id, updatedAt: new Date(parsed.data.expectedUpdatedAt) }, data: parsed.data.data,
+          where: { id: target, updatedAt: new Date(parsed.data.expectedUpdatedAt) }, data: parsed.data.data,
         });
         if (changed.count !== 1) throw new MaterialError(409, "MATERIAL_CHANGED_OR_MISSING");
-        return tx.material.findUniqueOrThrow({ where: { id } });
+        const updated = await tx.material.findUniqueOrThrow({ where: { id: target } });
+        // Publication rule, checked on the resulting row so it also covers clearing the link of a published
+        // material. Throwing here rolls the whole transaction back.
+        if (updated.status === "PUBLISHED" && !updated.checkoutUrl) throw new MaterialError(422, "MATERIAL_NOT_PUBLISHABLE");
+        return updated;
       });
     },
     // Deletion is deliberately represented by status ARCHIVED through change().
@@ -139,6 +164,37 @@ export function createMaterialService(db: PrismaClient, guards: Guards, storage:
       });
       if (removed.count !== 1) throw new MaterialError(409, "PDF_CHANGED_OR_MISSING");
       return { removed: parsed.data.assetId };
+    },
+
+    /**
+     * Cover upload (admin). The bytes are validated in memory BEFORE anything is stored: real format by signature
+     * (PNG/JPEG/WebP only), declared type must match, size and dimensions. Content-addressed key: same image, same file.
+     */
+    async uploadCover(bytes: Uint8Array, declaredType: string) {
+      await guards.requireAdmin();
+      requireStorage();
+      if (bytes.byteLength > COVER_MAX_BYTES) throw new MaterialError(413, "COVER_TOO_LARGE");
+      const info = inspectCoverImage(bytes);
+      if (!info || info.contentType !== declaredType) throw new MaterialError(422, "COVER_INVALID");
+      const file = `${createHash("sha256").update(bytes).digest("hex")}.${COVER_TYPES[info.contentType]}`;
+      const key = coverStorageKey(file);
+      if (!await storage.headObject(key)) await storage.putObject({ key, body: bytes, contentType: info.contentType });
+      return { coverImage: `${COVER_ROUTE}${file}`, width: info.width, height: info.height };
+    },
+
+    /**
+     * Public cover read (no session, like listPublished). Only content-addressed cover names map to a key, always under
+     * covers/: PDF keys (materials/…) can never be reached. The stored object must still look like that cover.
+     */
+    async readCover(name: string) {
+      const file = uploadedCoverFile(name);
+      if (!file) throw new MaterialError(404, "COVER_NOT_FOUND");
+      requireStorage();
+      const key = coverStorageKey(file);
+      const head = await storage.headObject(key);
+      const contentType = coverTypeOfFile(file);
+      if (!head || head.contentType !== contentType || head.size < 1 || head.size > COVER_MAX_BYTES) throw new MaterialError(404, "COVER_NOT_FOUND");
+      return { body: await storage.readObject(key), contentType, size: head.size };
     },
 
     /** Subscriber download: authorization, publication and file availability are checked before any URL is signed. */

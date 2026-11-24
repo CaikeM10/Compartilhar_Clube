@@ -20,7 +20,8 @@ const catalog = require('../lib/materials/catalog.json');
 const validation = load('lib/materials/validation.ts');
 const price = load('lib/materials/price.ts');
 const types = load('lib/materials/types.ts');
-const client = load('lib/materials/admin-client.ts', { './price': price });
+const coverImage = load('lib/materials/cover-image.ts');
+const client = load('lib/materials/admin-client.ts', { './price': price, './cover-image': coverImage });
 
 const view = (overrides = {}) => ({
   id: 'material-initial-001', title: 'Aprendendo felicidade', description: null, priceCents: 490, currency: 'BRL',
@@ -114,6 +115,7 @@ const ui = {
   },
   'lucide-react': new Proxy({}, { get: () => () => null }),
   '@/lib/materials/price': price, '@/lib/materials/admin-client': client, '@/lib/materials/types': types,
+  '@/lib/materials/cover-image': coverImage,
 };
 const { MaterialManager } = load('components/materials/MaterialManager.tsx', ui);
 const render = props => renderToStaticMarkup(React.createElement(MaterialManager, { coverOptions: ['/aprendendofelicidade.webp'], storageConfigured: false, ...props }));

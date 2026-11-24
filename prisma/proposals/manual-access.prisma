@@ -1,0 +1,61 @@
+// Proposal fragment only. Not loaded by the application. Migration not approved.
+// SQL: prisma/proposals/manual-access.sql (wrapped by docs/producao-migracao/08-manual-access.sql).
+// Integrity tests (material-catalog, private-access) remove exactly these additions from prisma/schema.prisma and
+// compare the rest with the original hash: see tests/manual-access-schema.cjs.
+// @user-fields: inserted in model User right after `adminAuditTargets`
+  manualAccessGrant   ManualAccessGrant?  @relation("ManualAccessGrantUser")
+  manualAccessGranted ManualAccessGrant[] @relation("ManualAccessGrantGrantedBy")
+  manualAccessRevoked ManualAccessGrant[] @relation("ManualAccessGrantRevokedBy")
+  manualAccessActions ManualAccessEvent[] @relation("ManualAccessEventActor")
+  manualAccessTargets ManualAccessEvent[] @relation("ManualAccessEventTarget")
+// @models: inserted after model AdminAuditEvent, before the catalog models
+// Manual access grants: applied only with explicit authorization (prisma/proposals/manual-access.sql).
+// Independent from Plan/Subscription/Payment: an administrative grant is never a payment, plan or subscription.
+enum ManualAccessAction {
+  GRANTED
+  RENEWED
+  REVOKED
+}
+
+model ManualAccessGrant {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  startsAt    DateTime
+  endsAt      DateTime
+  revokedAt   DateTime?
+  grantedById String
+  revokedById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+
+  user      User                @relation("ManualAccessGrantUser", fields: [userId], references: [id], onDelete: Restrict)
+  grantedBy User                @relation("ManualAccessGrantGrantedBy", fields: [grantedById], references: [id], onDelete: Restrict)
+  revokedBy User?               @relation("ManualAccessGrantRevokedBy", fields: [revokedById], references: [id], onDelete: Restrict)
+  events    ManualAccessEvent[]
+
+  @@index([grantedById])
+  @@index([revokedById])
+  @@map("manual_access_grants")
+}
+
+model ManualAccessEvent {
+  id               String             @id @default(cuid())
+  action           ManualAccessAction
+  grantId          String
+  actorId          String
+  targetUserId     String
+  previousStartsAt DateTime?
+  previousEndsAt   DateTime?
+  newStartsAt      DateTime?
+  newEndsAt        DateTime?
+  createdAt        DateTime           @default(now())
+
+  grant  ManualAccessGrant @relation(fields: [grantId], references: [id], onDelete: Restrict)
+  actor  User              @relation("ManualAccessEventActor", fields: [actorId], references: [id], onDelete: Restrict)
+  target User              @relation("ManualAccessEventTarget", fields: [targetUserId], references: [id], onDelete: Restrict)
+
+  @@index([grantId, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([actorId, createdAt])
+  @@map("manual_access_events")
+}

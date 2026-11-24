@@ -2,7 +2,7 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { requirePageAccess } from "@/lib/auth/page-access";
 import { getAdminDashboard } from "@/lib/admin/dashboard";
 import { Card } from "@/components/ui/card";
-import { Video, CalendarClock, Users, BadgeCheck } from "lucide-react";
+import { Video, CalendarClock, Users, BadgeCheck, KeyRound } from "lucide-react";
 import Link from "next/link";
 
 export default async function AdminDashboardPage() {
@@ -11,6 +11,7 @@ export default async function AdminDashboardPage() {
   const metrics = data.kind === "ready" ? [
     { label: "Alunos cadastrados", value: data.students, detail: "Contas de aluno, incluindo as desabilitadas.", icon: Users, color: "bg-primary/10 text-primary" },
     { label: "Assinaturas ativas", value: data.activeSubscriptions, detail: "Status ativo e período vigente. Contagem de assinaturas, não de pessoas.", icon: BadgeCheck, color: "bg-accent/10 text-accent" },
+    { label: "Acessos manuais ativos", value: data.activeManualAccess, detail: "Liberações administrativas vigentes de alunos habilitados. Não são assinaturas nem pagamentos.", icon: KeyRound, color: "bg-primary/10 text-primary" },
     { label: "Próximas do vencimento", value: data.expiringSubscriptions, detail: "Assinaturas vigentes que vencem nos próximos 7 dias.", icon: CalendarClock, color: "bg-tertiary/10 text-tertiary" },
     { label: "Aulas cadastradas", value: data.lessons, detail: `${data.publishedLessons.toLocaleString("pt-BR")} publicadas. Total inclui rascunhos e arquivadas.`, icon: Video, color: "bg-secondary/10 text-secondary" },
   ] : [];

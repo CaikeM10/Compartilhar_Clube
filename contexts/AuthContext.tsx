@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation"
 
 interface AuthContextType {
   user: User | null
-  login: (email: string, password: string) => Promise<"/admin/dashboard" | "/aluno/dashboard">
+  login: (email: string, password: string) => Promise<"/admin/dashboard" | "/aluno/dashboard" | "/conta/alterar-senha">
   logout: () => Promise<void>
   isAuthenticated: boolean
   isLoading: boolean

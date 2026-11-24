@@ -18,13 +18,14 @@ function load(file, overrides = {}) {
 }
 const validation = load('lib/materials/validation.ts');
 const storageModule = load('lib/storage/private-storage.ts');
-const core = load('lib/materials/service-core.ts', { './validation': validation, '@/lib/storage/private-storage': storageModule });
+const coverImage = load('lib/materials/cover-image.ts');
+const core = load('lib/materials/service-core.ts', { './validation': validation, '@/lib/storage/private-storage': storageModule, './cover-image': coverImage });
 const authorization = load('lib/auth/authorization-core.ts');
 const lessonCore = load('lib/lessons/service-core.ts', { './validation': load('lib/lessons/validation.ts') });
 const lessonHttp = load('lib/lessons/http.ts', { './service-core': lessonCore, '@/lib/auth/authorization-core': authorization });
 const http = load('lib/materials/http.ts', {
   '@/lib/auth/authorization-core': authorization, '@/lib/lessons/service-core': lessonCore, '@/lib/lessons/http': lessonHttp,
-  '@/lib/storage/private-storage': storageModule, './service-core': core,
+  '@/lib/storage/private-storage': storageModule, './service-core': core, './cover-image': coverImage,
 });
 
 const deny = code => async () => { throw new authorization.AuthorizationError(code === 'UNAUTHENTICATED' ? 401 : 403, code); };

@@ -1,0 +1,34 @@
+// Proposal fragment only. Not loaded by the application. Migration not approved.
+// SQL: prisma/proposals/admin-users.sql (wrapped by docs/producao-migracao/06-admin-users.sql).
+// Integrity tests (material-catalog, private-access) remove exactly these additions from prisma/schema.prisma and
+// compare the rest with the original hash: see tests/admin-users-schema.cjs.
+// @user-fields: inserted in model User right after `disabledAt`
+  isPrincipalAdmin   Boolean           @default(false)
+  mustChangePassword Boolean           @default(false)
+  adminAuditActions  AdminAuditEvent[] @relation("AdminAuditActor")
+  adminAuditTargets  AdminAuditEvent[] @relation("AdminAuditTarget")
+// @models: inserted after model Payment, before the catalog models
+// Admin user management: applied only with explicit authorization (prisma/proposals/admin-users.sql).
+enum AdminAuditAction {
+  USER_CREATED
+  ROLE_CHANGED
+  PRINCIPAL_DESIGNATED
+  OPERATOR_PASSWORD_RESET
+}
+
+model AdminAuditEvent {
+  id           String           @id @default(cuid())
+  action       AdminAuditAction
+  actorId      String?
+  targetUserId String
+  previousRole Role?
+  newRole      Role?
+  createdAt    DateTime         @default(now())
+
+  actor  User? @relation("AdminAuditActor", fields: [actorId], references: [id], onDelete: Restrict)
+  target User  @relation("AdminAuditTarget", fields: [targetUserId], references: [id], onDelete: Restrict)
+
+  @@index([targetUserId, createdAt])
+  @@index([actorId, createdAt])
+  @@map("admin_audit_events")
+}

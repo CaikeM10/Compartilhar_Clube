@@ -20,7 +20,7 @@ export default async function AdminRecursosPage() {
     }
     materials = null;
   }
-  // Only existing local images are offered as covers (cover upload is a later stage).
+  // Catalog images offered in the picker; the panel adds covers already in use and new uploads (validated server-side).
   const coverOptions = Array.from(new Set(catalog.map(material => material.image)));
   return (
     <AdminLayout viewer={user}>

@@ -45,6 +45,15 @@ model User {
   image         String?
   role          Role     @default(STUDENT)
   disabledAt    DateTime?
+  isPrincipalAdmin   Boolean           @default(false)
+  mustChangePassword Boolean           @default(false)
+  adminAuditActions  AdminAuditEvent[] @relation("AdminAuditActor")
+  adminAuditTargets  AdminAuditEvent[] @relation("AdminAuditTarget")
+  manualAccessGrant   ManualAccessGrant?  @relation("ManualAccessGrantUser")
+  manualAccessGranted ManualAccessGrant[] @relation("ManualAccessGrantGrantedBy")
+  manualAccessRevoked ManualAccessGrant[] @relation("ManualAccessGrantRevokedBy")
+  manualAccessActions ManualAccessEvent[] @relation("ManualAccessEventActor")
+  manualAccessTargets ManualAccessEvent[] @relation("ManualAccessEventTarget")
   updatedAt     DateTime @default(now()) @updatedAt
   accounts      Account[]
   sessions      Session[]
@@ -164,6 +173,82 @@ model Payment {
   createdAt     DateTime @default(now())
 
   @@map("payments")
+}
+
+// Admin user management: applied only with explicit authorization (prisma/proposals/admin-users.sql).
+enum AdminAuditAction {
+  USER_CREATED
+  ROLE_CHANGED
+  PRINCIPAL_DESIGNATED
+  OPERATOR_PASSWORD_RESET
+}
+
+model AdminAuditEvent {
+  id           String           @id @default(cuid())
+  action       AdminAuditAction
+  actorId      String?
+  targetUserId String
+  previousRole Role?
+  newRole      Role?
+  createdAt    DateTime         @default(now())
+
+  actor  User? @relation("AdminAuditActor", fields: [actorId], references: [id], onDelete: Restrict)
+  target User  @relation("AdminAuditTarget", fields: [targetUserId], references: [id], onDelete: Restrict)
+
+  @@index([targetUserId, createdAt])
+  @@index([actorId, createdAt])
+  @@map("admin_audit_events")
+}
+
+// Manual access grants: applied only with explicit authorization (prisma/proposals/manual-access.sql).
+// Independent from Plan/Subscription/Payment: an administrative grant is never a payment, plan or subscription.
+enum ManualAccessAction {
+  GRANTED
+  RENEWED
+  REVOKED
+}
+
+model ManualAccessGrant {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  startsAt    DateTime
+  endsAt      DateTime
+  revokedAt   DateTime?
+  grantedById String
+  revokedById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+
+  user      User                @relation("ManualAccessGrantUser", fields: [userId], references: [id], onDelete: Restrict)
+  grantedBy User                @relation("ManualAccessGrantGrantedBy", fields: [grantedById], references: [id], onDelete: Restrict)
+  revokedBy User?               @relation("ManualAccessGrantRevokedBy", fields: [revokedById], references: [id], onDelete: Restrict)
+  events    ManualAccessEvent[]
+
+  @@index([grantedById])
+  @@index([revokedById])
+  @@map("manual_access_grants")
+}
+
+model ManualAccessEvent {
+  id               String             @id @default(cuid())
+  action           ManualAccessAction
+  grantId          String
+  actorId          String
+  targetUserId     String
+  previousStartsAt DateTime?
+  previousEndsAt   DateTime?
+  newStartsAt      DateTime?
+  newEndsAt        DateTime?
+  createdAt        DateTime           @default(now())
+
+  grant  ManualAccessGrant @relation(fields: [grantId], references: [id], onDelete: Restrict)
+  actor  User              @relation("ManualAccessEventActor", fields: [actorId], references: [id], onDelete: Restrict)
+  target User              @relation("ManualAccessEventTarget", fields: [targetUserId], references: [id], onDelete: Restrict)
+
+  @@index([grantId, createdAt])
+  @@index([targetUserId, createdAt])
+  @@index([actorId, createdAt])
+  @@map("manual_access_events")
 }
 
 // Catalog models: applied only to the explicitly authorized local test database.

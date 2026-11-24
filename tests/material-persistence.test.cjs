@@ -11,7 +11,7 @@ function load(file, imports = require) {
 }
 const validation = load('lib/materials/validation.ts');
 const storage = load('lib/storage/private-storage.ts');
-const { createMaterialService } = load('lib/materials/service-core.ts', name => name === './validation' ? validation : name === '@/lib/storage/private-storage' ? storage : require(name));
+const { createMaterialService } = load('lib/materials/service-core.ts', name => name === './validation' ? validation : name === '@/lib/storage/private-storage' ? storage : name === './cover-image' ? load('lib/materials/cover-image.ts', require) : require(name));
 const allow = { requireAdmin: async () => {}, requireActiveSubscription: async () => {} };
 const { createAuthorization } = load('lib/auth/authorization-core.ts');
 const input = () => { const { id, status, ...data } = require('../scripts/material-catalog-import-plan.cjs').initialRecords()[0]; return data; };
@@ -29,7 +29,8 @@ test('all administrative service operations reject anonymous, STUDENT and disabl
 });
 test('ADMIN creation stays DRAFT and rejects injected IDs, roles, assets and invalid commercial data', async () => {
   let writes = 0;
-  const service = createMaterialService({ material: { create: async ({ data }) => { writes++; return data; } } }, allow);
+  const knownCovers = require('../lib/materials/catalog.json').map(item => item.image);
+  const service = createMaterialService({ material: { create: async ({ data }) => { writes++; return data; } } }, allow, undefined, { knownCovers });
   assert.equal((await service.create(input())).status, 'DRAFT');
   for (const patch of [{ id: 'injected' }, { role: 'ADMIN' }, { assets: [] }, { status: 'PUBLISHED' }, { priceCents: -1 }, { checkoutUrl: 'javascript:alert(1)' }, { coverImage: '/../secret.png' }]) {
     await assert.rejects(service.create({ ...input(), ...patch }), e => e.status === 400);

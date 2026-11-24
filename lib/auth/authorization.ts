@@ -11,5 +11,7 @@ function authorization() {
 }
 
 export async function requireSession() { return authorization().requireSession(); }
+export async function requirePasswordChangeSession() { return authorization().requirePasswordChangeSession(); }
 export async function requireAdmin() { return authorization().requireAdmin(); }
+export async function requirePrincipalAdmin() { return authorization().requirePrincipalAdmin(); }
 export async function requireActiveSubscription() { return authorization().requireActiveSubscription(); }

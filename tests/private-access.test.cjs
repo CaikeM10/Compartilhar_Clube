@@ -8,6 +8,8 @@ const ts = require('typescript');
 const { redirect, getURLFromRedirectError } = require('next/dist/client/components/redirect');
 const { isRedirectError } = require('next/dist/client/components/redirect-error');
 const { validateTarget, verifyServer } = require('../scripts/auth-test-safety.cjs');
+const { stripAdminUsersSchema } = require('./admin-users-schema.cjs');
+const { stripManualAccessSchema } = require('./manual-access-schema.cjs');
 const root = path.resolve(__dirname, '..');
 const baseline = JSON.parse(fs.readFileSync(path.join(root, 'docs/private-access/before.json'), 'utf8'));
 const pages = Object.keys(baseline.pages);
@@ -105,6 +107,9 @@ test('every private page has server authorization before rendering; visual marku
         assert.equal(restored.slice(start + 1), proposal.replace('// Proposal fragment only. Not loaded by the application. Migration not approved.', marker.slice(1)), 'Material schema differs from reviewed proposal');
         restored = restored.slice(0, start);
       }
+      // Manual access grants, then admin user management: authorized additions only in the exact reviewed form
+      // (tests/manual-access-schema.cjs, tests/admin-users-schema.cjs).
+      restored = stripAdminUsersSchema(stripManualAccessSchema(restored));
       assert.equal(createHash('sha256').update(restored).digest('hex'), hash, 'Existing Prisma schema changed');
       continue;
     }

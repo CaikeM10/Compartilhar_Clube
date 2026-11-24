@@ -9,7 +9,10 @@ import { Card } from "@/components/ui/card";
 import { Video, FileText, MessagesSquare, Check, Brain } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { MaterialsCarousel } from "@/components/materials/MaterialsCarousel";
+import { HomeMaterialsCarousel } from "@/components/materials/HomeMaterialsCarousel";
+
+// Statically cached; the carousel is refreshed on demand by admin writes (revalidateMaterialPages) and at most every 5 minutes.
+export const revalidate = 300;
 
 export default function HomePage() {
   return (
@@ -421,7 +424,7 @@ export default function HomePage() {
 
           {/* ================= CARROSSEL ================= */}
           <ScrollAnimation animation="fade-up" delay={150}>
-            <MaterialsCarousel />
+            <HomeMaterialsCarousel />
           </ScrollAnimation>
 
           {/* ================= CTA ================= */}

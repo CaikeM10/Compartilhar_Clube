@@ -16,7 +16,7 @@ function load(file, imports) {
 }
 const validation = load('lib/materials/validation.ts', require);
 const storage = load('lib/storage/private-storage.ts', require);
-const core = load('lib/materials/service-core.ts', name => name === './validation' ? validation : name === '@/lib/storage/private-storage' ? storage : require(name));
+const core = load('lib/materials/service-core.ts', name => name === './validation' ? validation : name === '@/lib/storage/private-storage' ? storage : name === './cover-image' ? load('lib/materials/cover-image.ts', require) : require(name));
 const { createAuthorization, AuthorizationError } = load('lib/auth/authorization-core.ts', require);
 const input = () => {
   const { id, status, ...data } = require('../scripts/material-catalog-import-plan.cjs').initialRecords()[0];
@@ -31,6 +31,7 @@ function loadServer({ db, requireAdmin, requireActiveSubscription = requireAdmin
     if (name === '@/lib/auth/authorization') return { requireAdmin, requireActiveSubscription };
     if (name === '@/lib/storage/server') return { getPrivateStorage: () => storage.unconfiguredStorage };
     if (name === './service-core') return core;
+    if (name === './catalog') return { materials: require('../lib/materials/catalog.json') };
     throw new Error(`Unexpected import: ${name}`); // e.g. @prisma/client: no second pool
   };
   return { server: load('lib/materials/server.ts', imports), calls };

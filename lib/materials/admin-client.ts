@@ -1,6 +1,10 @@
 // Client-safe helpers for the admin materials panel. The server revalidates everything.
 import { parsePriceToCents } from "./price";
 import type { MaterialAdminView, MaterialStatusView } from "./types";
+import { COVER_MAX_BYTES, isCoverContentType } from "./cover-image";
+
+const ADMIN_BASE = "/api/admin/materials";
+export const PDF_LIMIT_BYTES = 25 * 1024 * 1024; // same limit as lib/materials/validation.ts (PDF_MAX_BYTES)
 
 export type MaterialFormValues = {
   title: string; description: string; price: string; coverImage: string; checkoutUrl: string; isPremium: boolean; displayOrder?: string;
@@ -60,15 +64,27 @@ const messages: Record<string, string> = {
   INVALID_ORIGIN: "Não foi possível validar a origem. Reabra a plataforma pelo endereço configurado.",
   MATERIAL_NOT_FOUND: "Este material não foi encontrado. A lista foi atualizada.",
   MATERIAL_CHANGED_OR_MISSING: "Este material foi alterado por outra pessoa ou sessão. A lista foi atualizada; revise e tente novamente.",
+  MATERIAL_NOT_PUBLISHABLE: "Para publicar, informe o link Hotmart do material. Um material publicado não pode ficar sem link.",
+  INVALID_COVER: "Escolha uma capa da lista ou envie uma nova imagem.",
+  COVER_INVALID: "A imagem foi recusada. Envie um arquivo PNG, JPG ou WebP válido, entre 200 e 8000 pixels de lado.",
+  COVER_TOO_LARGE: "A imagem é grande demais. O limite é 3 MB.",
+  COVER_TYPE_UNSUPPORTED: "Formato de imagem não aceito. Use PNG, JPG ou WebP.",
+  PDF_INVALID: "O arquivo enviado não é um PDF válido ou chegou incompleto. Envie novamente.",
+  PDF_UPLOAD_NOT_FOUND: "O envio do PDF expirou ou não foi encontrado. Envie novamente.",
+  PDF_UPLOAD_MISSING: "O PDF não chegou ao armazenamento. Envie novamente.",
+  PDF_UPLOAD_FAILED: "Não foi possível transferir o PDF. Verifique a conexão e envie novamente.",
+  STORAGE_UNAVAILABLE: "O armazenamento de arquivos está indisponível no momento. Tente novamente em instantes.",
+  MATERIAL_CONFLICT: "Houve um conflito com outra alteração. Atualize a lista e tente novamente.",
   MATERIAL_ORDER_STALE: "A lista mudou desde que foi carregada. Ela foi atualizada; tente reordenar novamente.",
   PDF_CHANGED_OR_MISSING: "O PDF deste material mudou. A lista foi atualizada.",
   MATERIALS_PERSISTENCE_DISABLED: "O gerenciamento de materiais não está habilitado neste ambiente.",
-  STORAGE_NOT_CONFIGURED: "O armazenamento privado de PDFs ainda não está configurado.",
+  STORAGE_NOT_CONFIGURED: "O armazenamento de arquivos (capas e PDFs) ainda não está configurado.",
   MATERIALS_UNAVAILABLE: "O serviço de materiais está indisponível no momento. Tente novamente em instantes.",
 };
 const byStatus: Record<number, string> = {
   400: "Confira os dados informados.", 401: messages.UNAUTHENTICATED, 403: messages.FORBIDDEN,
   404: "O item não foi encontrado. Atualize a lista.", 409: "Houve um conflito com outra alteração. Atualize a lista.",
+  413: messages.COVER_TOO_LARGE, 415: messages.COVER_TYPE_UNSUPPORTED, 422: "O arquivo foi recusado pela validação.",
   503: messages.MATERIALS_UNAVAILABLE,
 };
 export function materialErrorMessage(status: number, code?: string) {
@@ -92,6 +108,53 @@ export async function adminRequest<T>(fetchImpl: typeof fetch, path: string, met
   const payload = await response.json().catch(() => null);
   if (response.ok) return { ok: true, status: response.status, data: payload as T };
   return { ok: false, status: response.status, code: typeof payload?.error === "string" ? payload.error : undefined };
+}
+
+/** Early feedback before sending a cover (the server checks the real bytes again). */
+export function coverFileError(file: { type: string; size: number }) {
+  if (!isCoverContentType(file.type)) return messages.COVER_TYPE_UNSUPPORTED;
+  if (file.size < 1 || file.size > COVER_MAX_BYTES) return messages.COVER_TOO_LARGE;
+  return null;
+}
+
+/** Sends the image bytes as-is (no multipart); the response carries the public cover path to store in the material. */
+export async function uploadCover(fetchImpl: typeof fetch, file: Blob): Promise<AdminResult<{ coverImage: string }>> {
+  let response: Response;
+  try {
+    response = await fetchImpl(`${ADMIN_BASE}/covers`, { method: "POST", credentials: "same-origin", cache: "no-store", headers: { "Content-Type": file.type }, body: file });
+  } catch { return { ok: false, status: 0, code: "NETWORK_ERROR" }; }
+  const payload = await response.json().catch(() => null);
+  if (response.ok && typeof payload?.coverImage === "string") return { ok: true, status: response.status, data: { coverImage: payload.coverImage } };
+  return { ok: false, status: response.status, code: typeof payload?.error === "string" ? payload.error : undefined };
+}
+
+/** File name accepted by the server (no path or reserved characters, ends in .pdf, at most 255 characters). */
+export function safePdfFilename(name: string) {
+  const base = name.normalize("NFC").replace(/\.pdf$/i, "").replace(/[\\/:*?"<>|\u0000-\u001f\u007f]+/g, "-").replace(/^[.\s]+|\s+$/g, "").slice(0, 200);
+  return `${base || "material"}.pdf`;
+}
+
+export function pdfFileError(file: { type: string; size: number; name: string }) {
+  if (file.type !== "application/pdf" && !/\.pdf$/i.test(file.name)) return "Escolha um arquivo PDF.";
+  if (file.size < 1 || file.size > PDF_LIMIT_BYTES) return "O PDF deve ter no máximo 25 MB.";
+  return null;
+}
+
+type PdfStart = { assetId: string; upload: { url: string; method: "PUT"; headers: Record<string, string> } };
+
+/**
+ * Three steps: the server reserves a version and signs a short-lived upload URL; the browser sends the file straight
+ * to the private bucket (it never passes through the Vercel function); the server then validates the stored object.
+ */
+export async function uploadPdf(fetchImpl: typeof fetch, materialId: string, file: File): Promise<AdminResult<unknown>> {
+  const path = `${ADMIN_BASE}/${encodeURIComponent(materialId)}/pdf`;
+  const start = await adminRequest<PdfStart>(fetchImpl, path, "POST", { action: "start", filename: safePdfFilename(file.name), contentType: "application/pdf", size: file.size });
+  if (!start.ok) return start;
+  let put: Response;
+  try { put = await fetchImpl(start.data.upload.url, { method: "PUT", headers: start.data.upload.headers, body: file }); }
+  catch { return { ok: false, status: 0, code: "PDF_UPLOAD_FAILED" }; }
+  if (!put.ok) return { ok: false, status: put.status, code: "PDF_UPLOAD_FAILED" };
+  return adminRequest(fetchImpl, path, "POST", { action: "confirm", assetId: start.data.assetId });
 }
 
 export function formatFileSize(bytes: number) {

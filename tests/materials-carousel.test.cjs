@@ -9,10 +9,18 @@ const sharp = createRequire(require.resolve('next'))('sharp');
 
 const root = path.resolve(__dirname, '..');
 const catalog = require('../lib/materials/catalog.json');
+// Image base names of today's ten curated covers (pre-resized files in public/materials-covers).
 const carouselMaterials = require('../lib/materials/carousel.json').map(selection => {
   const product = catalog.find(item => item.id === selection.materialId);
   return { title: selection.title ?? product.title, image: product.image.slice(1).replace(/\.webp$/, '') };
 });
+// Items now come from the server (lib/materials/carousel-core.ts); persistence disabled = today's static carousel.
+const coreOutput = ts.transpileModule(fs.readFileSync(path.join(root, 'lib/materials/carousel-core.ts'), 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
+}).outputText;
+const carouselCore = { exports: {} };
+new Function('require', 'module', 'exports', coreOutput)(name => require(path.join(root, 'lib/materials', name)), carouselCore, carouselCore.exports);
+const { staticCarousel } = carouselCore.exports;
 const source = fs.readFileSync(path.join(root, 'components/materials/MaterialsCarousel.tsx'), 'utf8');
 const compiled = ts.transpileModule(source, { compilerOptions: {
   target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX,
@@ -28,7 +36,7 @@ function target(extra = {}) {
   };
 }
 
-function mount({ reduced = false, keyboard = false, width = 2920 } = {}) {
+function mount({ reduced = false, keyboard = false, width = 2920, items = staticCarousel() } = {}) {
   const effects = [], observers = [], sizeObservers = [], animations = [], state = [reduced, keyboard];
   const group = { getBoundingClientRect: () => ({ width }) };
   const viewport = target({ scrollLeft: 0, capture: null,
@@ -54,9 +62,10 @@ function mount({ reduced = false, keyboard = false, width = 2920 } = {}) {
     useEffect: callback => effects.push(callback),
   };
   const exports = {};
-  const jsx = (type, props) => ({ type, props });
+  const jsx = (type, props, key) => ({ type, props, key });
   vm.runInNewContext(compiled, {
-    exports, require: name => name === 'react' ? react : name === '@/lib/materials/catalog' ? { carouselMaterials } : { jsx, jsxs: jsx },
+    // The component no longer imports catalog data: only React and the JSX runtime are allowed.
+    exports, require: name => name === 'react' ? react : name === 'react/jsx-runtime' ? { jsx, jsxs: jsx } : assert.fail(`unexpected import ${name}`),
     window: win, document: doc, performance: { now: () => 1000 }, HTMLElement: class {},
     IntersectionObserver: class {
       constructor(callback) { this.callback = callback; observers.push(this); }
@@ -67,7 +76,7 @@ function mount({ reduced = false, keyboard = false, width = 2920 } = {}) {
       observe() {} disconnect() { this.disconnected = true; }
     },
   });
-  const tree = exports.MaterialsCarousel();
+  const tree = exports.MaterialsCarousel({ items });
   const cleanup = effects.map(callback => callback());
   return { tree, viewport, track, animations, doc, win, preference, state,
     visible(value) { observers[0].callback([{ isIntersecting: value }]); },
@@ -83,6 +92,10 @@ function elements(node, type) {
 
 test('same ten covers, titles, links and responsive sources; copies excluded from keyboard', () => {
   const h = mount();
+  // Persistence disabled: exactly the ten curated items, order, titles and pre-resized URLs of the approved carousel.
+  const expected = carouselMaterials.map(item => ({ alt: item.title, src: `/materials-covers/${item.image}-520.webp`,
+    srcSet: [260, 520, 780].map(w => `/materials-covers/${item.image}-${w}.webp ${w}w`).join(', ') }));
+  assert.deepEqual(elements(h.tree, 'img').slice(0, 10).map(i => ({ alt: i.props.alt, src: i.props.src, srcSet: i.props.srcSet })), expected);
   const links = elements(h.tree, 'a');
   const images = elements(h.tree, 'img');
   assert.equal(links.length, 20);
@@ -241,4 +254,19 @@ test('all responsive images exist, retain aspect ratio and reduce bytes', async 
       assert.ok(fs.statSync(file).size < fs.statSync(original).size / 2);
     }
   }
+});
+
+test('covers without pre-resized variants use the original image only: no srcSet, no sizes, no invented URL', () => {
+  const items = [...staticCarousel().slice(0, 2), { id: 'material-initial-014', title: 'Termômetro das Emoções', src: '/termometro.webp', srcSet: null }];
+  const h = mount({ items });
+  const images = elements(h.tree, 'img');
+  assert.equal(images.length, 6);
+  assert.equal(images[2].props.src, '/termometro.webp');
+  assert.equal(images[2].props.srcSet, undefined);
+  assert.equal(images[2].props.sizes, undefined);
+  assert.ok(fs.existsSync(path.join(root, 'public', 'termometro.webp')));
+  assert.equal(images[0].props.sizes, '260px');
+  // Stable React keys come from material IDs (both copies of the loop).
+  assert.deepEqual(elements(h.tree, 'a').map(a => a.key), [...items, ...items].map(item => item.id));
+  h.unmount();
 });

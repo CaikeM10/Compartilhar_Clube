@@ -1,5 +1,5 @@
 import "server-only";
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
@@ -21,12 +21,16 @@ export function readAuthEnvironment(env: NodeJS.ProcessEnv) {
 
 /**
  * `allowSignUp` exists only for trusted server-side code (provisioning scripts, isolated tests).
- * `readAuthEnvironment` never sets it, so the application's public endpoint refuses sign-up.
+ * `serverProvisioning` is the in-process instance used by the admin panel to create accounts (lib/admin): sign-up
+ * enabled for that instance only, no automatic sign-in (no session is created) and no cookie plugin, so the
+ * administrator's own session can never be replaced. Neither instance is mounted on an HTTP route.
+ * `readAuthEnvironment` never sets these, so the application's public endpoint refuses sign-up.
  */
-export type ServerAuthEnvironment = ReturnType<typeof readAuthEnvironment> & { allowSignUp?: boolean };
+export type ServerAuthEnvironment = ReturnType<typeof readAuthEnvironment> & { allowSignUp?: boolean; serverProvisioning?: boolean };
 
-/** Dependency injection is for isolated integration tests; never accepts browser input. */
-export function createServerAuth(db: PrismaClient, environment: ServerAuthEnvironment) {
+/** Dependency injection is for isolated integration tests and server-side provisioning; never accepts browser input. */
+export function createServerAuth(db: PrismaClient | Prisma.TransactionClient, environment: ServerAuthEnvironment) {
+  const provisioning = environment.serverProvisioning === true;
   return betterAuth({
     appName: "Compartilhar Clube",
     baseURL: environment.baseURL,
@@ -35,7 +39,11 @@ export function createServerAuth(db: PrismaClient, environment: ServerAuthEnviro
     trustedOrigins: [environment.baseURL],
     database: prismaAdapter(db, { provider: "postgresql" }),
     // Public self-registration is closed; accounts are provisioned server-side.
-    emailAndPassword: { enabled: true, disableSignUp: environment.allowSignUp !== true },
+    emailAndPassword: {
+      enabled: true,
+      disableSignUp: environment.allowSignUp !== true && !provisioning,
+      ...(provisioning ? { autoSignIn: false } : {}),
+    },
     user: {
       additionalFields: {
         role: { type: ["STUDENT", "ADMIN"], defaultValue: "STUDENT", required: false, input: false, returned: false },
@@ -63,7 +71,7 @@ export function createServerAuth(db: PrismaClient, environment: ServerAuthEnviro
       before: createAuthMiddleware(async ctx => {
         if (["/sign-up/email", "/update-user"].includes(ctx.path)) {
           const body = ctx.body as Record<string, unknown> | undefined;
-          if (body && ["role", "emailVerified", "disabledAt", "userId", "id"].some(key => Object.hasOwn(body, key))) {
+          if (body && ["role", "emailVerified", "disabledAt", "userId", "id", "isPrincipalAdmin", "mustChangePassword"].some(key => Object.hasOwn(body, key))) {
             throw new APIError("BAD_REQUEST", { message: "Invalid user fields" });
           }
         }
@@ -89,7 +97,7 @@ export function createServerAuth(db: PrismaClient, environment: ServerAuthEnviro
         },
       },
     },
-    plugins: [nextCookies()],
+    plugins: provisioning ? [] : [nextCookies()],
   });
 }
 

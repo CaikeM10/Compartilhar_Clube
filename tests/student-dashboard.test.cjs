@@ -70,8 +70,13 @@ function viewImports(extra = {}) {
 
 test('dashboard renders session name, honest empty states, shared materials catalog and same responsive grids', async () => {
   const { SubscriptionSummary } = load('components/student/SubscriptionSummary.tsx', viewImports());
+  const rules = load('lib/admin/manual-access-rules.ts');
+  const { ManualAccessSummary } = load('components/student/ManualAccessSummary.tsx', viewImports({ '@/lib/admin/manual-access-rules': rules }));
+  let manualAccess = { kind: 'none' };
   const Page = load('app/aluno/dashboard/page.tsx', viewImports({
     '@/components/student/SubscriptionSummary': { SubscriptionSummary },
+    '@/components/student/ManualAccessSummary': { ManualAccessSummary },
+    '@/lib/student/manual-access': { getStudentManualAccess: async () => manualAccess },
     '@/lib/auth/page-access': { requirePageAccess: async access => { assert.equal(access, 'account'); return { user: { name: 'Aluna <Teste>', email: 'synthetic@example.invalid' } }; } },
     '@/lib/student/subscription': { getStudentSubscription: async () => ({ kind: 'none' }) },
   })).default;
@@ -85,6 +90,18 @@ test('dashboard renders session name, honest empty states, shared materials cata
   assert.doesNotMatch(html, />24<|120\+|>8<|15\/01\/2026|15 novos|\+3 novas|Desenvolvimento Cognitivo/);
   assert.doesNotMatch(html, /Aguardando aula em destaque|Aula em destaque/);
   assert.match(html, /md:grid-cols-3/); assert.match(html, /lg:grid-cols-3/);
+  // Never granted: no manual access card at all. Granted: shown apart from the (unchanged) subscription summary.
+  assert.doesNotMatch(html, /Acesso liberado pela equipe/);
+  manualAccess = { kind: 'grant', status: 'active', firstDay: '2026-11-01', lastDay: '2026-12-15' };
+  const granted = renderToStaticMarkup(await Page());
+  assert.match(granted, /Você ainda não tem uma assinatura vigente/);
+  assert.match(granted, /Acesso liberado pela equipe/); assert.match(granted, /15\/12\/2026/); assert.match(granted, /não gera cobrança/);
+  for (const [state, text] of [[{ kind: 'grant', status: 'scheduled', firstDay: '2026-12-01', lastDay: '2026-12-31' }, /começa em <strong[^>]*>01\/12\/2026/],
+    [{ kind: 'grant', status: 'expired', firstDay: '2026-10-01', lastDay: '2026-10-31' }, /terminou em 31\/10\/2026/],
+    [{ kind: 'grant', status: 'revoked', firstDay: '2026-10-01', lastDay: '2026-12-31' }, /encerrada pela equipe/],
+    [{ kind: 'unavailable' }, /Não foi possível consultar a liberação/]]) {
+    assert.match(renderToStaticMarkup(React.createElement(ManualAccessSummary, { access: state })), text);
+  }
   for (const status of ['active', 'expired', 'scheduled', 'inactive']) {
     const rendered = renderToStaticMarkup(React.createElement(SubscriptionSummary, { subscription: {
       kind: 'subscription', plan: 'Plano teste', status, startsAt: at.toISOString(), expiresAt: '2026-12-01T12:00:00Z',
