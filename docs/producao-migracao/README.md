@@ -203,9 +203,27 @@ Correções desta etapa (só testes/fixtures, sem mudança funcional): `private-
 5. Decisão sobre normalização de e-mails, após o resultado do 00.
 6. Apagar a branch de ensaio e, ao fim do período de observação, a branch de backup.
 
-## 12. Materiais — 04/05/91 (preparado em 2026-11-18; **nada executado**)
+## 12. Materiais — 04/05/91 (preparado em 2026-11-18; 04/05 aplicados **só na branch Neon de ensaio** em 2026-11-23; produção **não migrada**)
 
-Status: arquivos gerados e cobertos por testes offline (`tests/material-production-sql.test.cjs`). **Nenhum SQL foi executado** em banco algum (nem local, nem branch, nem produção). `MATERIALS_PERSISTENCE` continua **ausente** na Vercel.
+Status: arquivos gerados e cobertos por testes offline (`tests/material-production-sql.test.cjs`). Os arquivos continuam reutilizáveis: o texto deles não registra execuções, e a pré-condição do 04 recusa reaplicar no mesmo banco. O histórico fica na tabela abaixo. `MATERIALS_PERSISTENCE` continua **ausente** na Vercel (nenhum escopo).
+
+### Histórico de execução do 04
+
+| Banco | 04 | 05 | 10 (auditoria) | Observação |
+|---|---|---|---|---|
+| PostgreSQL local de testes (`compartilhar_auth_test@127.0.0.1`) | ❌ não aplicado | — | — | O bloco de materiais local veio de `scripts/local-material-catalog.cjs`, não do 04. O ensaio da Etapa 4 (abaixo) rodou o 04 sempre com ROLLBACK |
+| Branch Neon de ensaio `ensaio-04-06-08-20261123` (filha de `production`, PostgreSQL 17.12) | ✅ aplicado em 2026-11-23 (entre 18:10 e 18:21 UTC) | ✅ aprovado | ✅ `AUDITORIA_OK` antes e depois | Detalhes abaixo. Depois do 04, a mesma branch recebeu o 06 (seção 14) e o 08 (seção 15, 2026-11-24) |
+| Produção (Neon, branch `production`) | ❌ não aplicado | — | ✅ `AUDITORIA_OK` antes (somente leitura) | Exige autorização própria, backup em branch Neon e a sequência abaixo |
+
+**Execução no ensaio (2026-11-23):**
+- **Destino confirmado antes de qualquer escrita:** endpoint da branch de ensaio conferido no painel do Neon; endpoint diferente do da `production`; `neon.timeline_id` diferente do da `production` no mesmo projeto (`neon.tenant_id` igual); conexão direta (sem pooler) com `psql` 18.6, `sslmode=verify-full` e TLS 1.3; `replica = false`; fuso da sessão `GMT`; nenhuma outra sessão no banco.
+- **Auditoria 10 antes (18:10 UTC):** `AUDITORIA_OK`; 8 tabelas; blocos 04, 06 e 08 `ausente`; 65/65 colunas compatíveis com o Prisma; nenhum nome a criar ocupado; integridade toda 0; nenhuma trava ou transação aberta; privilégios necessários presentes.
+- **04:** `INSERT 0 15`; pós-condições internas aprovadas (15 materiais, 14 `PUBLISHED`, só `material-initial-014` em `DRAFT`, valores idênticos ao catálogo, `material_assets` vazia, 10 restrições, 7 índices, enums corretos, impressões digitais de `users`/`plans`/`subscriptions`/`payments`/`lessons`/`auth_accounts` inalteradas); `COMMIT`; `psql` com saída 0.
+- **05:** `PUBLISHED 14` / `DRAFT 1`; 0 divergências com o catálogo nos dois sentidos; 0 assets; trava aprovada; `ROLLBACK`; saída 0.
+- **Auditoria 10 depois (18:21 UTC):** `AUDITORIA_OK`; bloco 04 `completo` (4/4), 06 e 08 `ausente`; 10 tabelas; integridade toda 0.
+- **Dados preexistentes preservados:** as impressões digitais da seção 15 do 10 (usuários, credenciais incluindo o hash da senha, sessões, planos, assinaturas, pagamentos e aulas) e as contagens da seção 10 ficaram **idênticas** às de antes do 04 (comparação com `diff`).
+- **Registros** (em `resultados/`, que não é versionado; sem credenciais nem dados pessoais): `10-ensaio-20261123T1809Z-pre04.txt`, `04-ensaio-20261123T1809Z.txt`, `05-ensaio-20261123T1809Z.txt`, `10-ensaio-20261123T1809Z-pos04.txt`. O SQL de auditoria é `10-auditoria-producao-somente-leitura.sql`, desta pasta.
+- **Não testado ainda:** Preview da Vercel com `MATERIALS_PERSISTENCE=enabled` apontando para o ensaio; 91 em PostgreSQL 17; benefício do `REPEATABLE READ` com uma segunda conexão concorrente.
 
 ### Efeito esperado sobre os 15 materiais
 
@@ -239,10 +257,10 @@ Status: arquivos gerados e cobertos por testes offline (`tests/material-producti
 - **05** (somente leitura): mostra contagens e divergências nos dois sentidos e termina com uma **trava** que levanta exceção se algo divergir. É o portão para ligar a persistência. Depois que o admin começar a editar, as divergências passam a refletir as edições.
 - **91** (emergência): `LOCK` exclusivo; aborta se houver qualquer linha em `material_assets` ou se os materiais não forem exatamente os 15 do 04 sem edição; remove só `material_assets`, `materials` e os dois enums.
 
-### Sequência proposta (cada passo exige autorização; nada disto foi feito)
+### Sequência proposta (cada passo exige autorização; só o passo 2 foi iniciado, em 2026-11-23)
 
 1. **Ensaio local** (Etapa 4): 04 → 05 → 91 num schema temporário do banco local, sempre com ROLLBACK, como o `scripts/migration-rehearsal-local.cjs`.
-2. **Ensaio em branch Neon** (PostgreSQL 17, igual à produção; o local é 18): criar a branch a partir de `production`, rodar 04 e 05 e testar no Preview com `MATERIALS_PERSISTENCE=enabled` **somente no escopo Preview**.
+2. **Ensaio em branch Neon** (PostgreSQL 17, igual à produção; o local é 18): criar a branch a partir de `production`, rodar 04 e 05 e testar no Preview com `MATERIALS_PERSISTENCE=enabled` **somente no escopo Preview**. Situação em 2026-11-23: branch criada, 04 e 05 aprovados; Preview pendente.
 3. **Backup:** branch `backup-pre-materiais-<AAAAMMDD-HHMM>` e confirmar a janela de PITR.
 4. **Produção:** rodar 04, depois 05. **Só seguir se o 05 terminar sem a exceção da trava.**
 5. Definir `MATERIALS_PERSISTENCE=enabled` em Production e fazer o redeploy.
@@ -264,7 +282,7 @@ Status: arquivos gerados e cobertos por testes offline (`tests/material-producti
 
 ### Limitações conhecidas
 
-- 04/05/91 foram executados **apenas no ensaio local em PostgreSQL 18.6** (abaixo). Falta o PostgreSQL 17 (Neon).
+- 04/05 foram executados no ensaio local em PostgreSQL 18.6 (abaixo, com ROLLBACK) e aplicados na branch Neon de ensaio em PostgreSQL 17.12 (2026-11-23, histórico acima). O 91 só foi executado no ensaio local (18.6); falta execução em 17.
 - **O banco local de testes tem o 014 como `PUBLISHED`** (importação de 2026-11-06, regra anterior); os dados comerciais dele são idênticos ao catálogo. Com a regra nova, um `--import` local abortaria com `MATERIAL_IMPORT_CONFLICT` (014, `status`). `scripts/verify-local-material-catalog.cjs` ainda usa o contrato antigo (`result.conflicts`) e falharia. A reconciliação e o ajuste estão **propostos, não executados**.
 
 ### Ensaio local (Etapa 4, 2026-11-18) — `node scripts/material-migration-rehearsal-local.cjs`
@@ -298,7 +316,7 @@ B e C rodam cada uma numa única transação que **sempre termina em ROLLBACK**.
 
 **Limites do ensaio:**
 - No ensaio o `BEGIN ISOLATION LEVEL REPEATABLE READ` vira SAVEPOINT. O benefício contra escritas de **outra sessão** só pode ser demonstrado na branch Neon, com uma segunda conexão.
-- PostgreSQL 17 não está instalado localmente. A revisão estática não encontrou recurso exclusivo do 18, e a contagem de restrições filtra `p/f/c` porque o 18 também lista NOT NULL. Mesmo assim falta execução real em 17.
+- PostgreSQL 17 não está instalado localmente. A revisão estática não encontrou recurso exclusivo do 18, e a contagem de restrições filtra `p/f/c` porque o 18 também lista NOT NULL. Execução real em 17: 04 e 05 aprovados na branch Neon de ensaio em 2026-11-23; 91 ainda não.
 - As mensagens do servidor local estão em português. As verificações de restrição usam o nome da constraint ou a chave, nunca o texto traduzido.
 
 ### Proposta de reconciliação do 014 no banco local (NÃO executada)
@@ -448,7 +466,7 @@ Depois, na transação somente leitura, `pg_stat_ssl` e `pg_stat_activity` da pr
 2. No terminal local: `node scripts/neon-account-rehearsal.cjs`. Responder nome da branch, endpoint de production, conexão (oculta), banco e endpoint; revisar as evidências; digitar `ENSAIO`. Leva cerca de 1–2 minutos, por causa do caso de transação expirada.
 3. Entregar o relatório JSON para análise. Depois, **apagar a branch de ensaio** no console.
 
-## 14. Gerenciamento de usuários no painel (preparado em 2026-11-19; **aplicado só no PostgreSQL local de testes**)
+## 14. Gerenciamento de usuários no painel (preparado em 2026-11-19; aplicado no PostgreSQL local de testes e na branch Neon de ensaio; produção **não migrada**)
 
 ### Histórico de execução do 06
 
@@ -457,8 +475,18 @@ Os arquivos 06/07/92 continuam reutilizáveis: o texto deles não registra execu
 | Banco | 06 | 07 | Observação |
 |---|---|---|---|
 | PostgreSQL local de testes (`compartilhar_auth_test@127.0.0.1`) | ✅ aplicado em 2026-11-20 | ✅ aprovado em 2026-11-20 | Backup pós-06 em `Compartilhar_Clube_Backups/` (fora do repositório) |
-| Branch Neon de ensaio | ❌ não aplicado | — | Exige autorização própria |
+| Branch Neon de ensaio `ensaio-04-06-08-20261123` (filha de `production`, PostgreSQL 17.12) | ✅ aplicado em 2026-11-23 (entre 19:17 e 19:30 UTC) | ✅ aprovado em 2026-11-23 | Detalhes abaixo. Aplicado depois do 04 na mesma branch; depois recebeu o 08 (seção 15, 2026-11-24). Nenhum principal designado |
 | Produção (Neon) | ❌ não aplicado | — | Exige autorização própria |
+
+**Execução no ensaio (2026-11-23)**, com o mesmo procedimento do 04 (seção 12):
+- **Destino confirmado antes da escrita:** `neon.timeline_id` igual ao da branch de ensaio e diferente do da `production`, mesmo projeto; conexão direta (sem pooler), `psql` 18.6 com `sslmode=verify-full`; `replica = false`; fuso `GMT`; nenhuma outra sessão.
+- **Auditoria 10 antes do 06 (19:17 UTC):** `AUDITORIA_OK`; bloco 04 `completo` (4/4), 06 e 08 `ausente`; 10 tabelas; nenhum nome a criar ocupado; nenhum gatilho; integridade toda 0; nenhuma trava ou transação aberta; privilégios necessários presentes; impressões digitais e contagens idênticas às do pós-04.
+- **06:** pós-condições internas aprovadas (contagens de usuários, ADMINs, credenciais e sessões inalteradas; ninguém principal nem com troca obrigatória; auditoria vazia); `COMMIT`; `psql` com saída 0.
+- **07:** os 7 objetos presentes; ADMIN 1 e STUDENT 2, com 0 principais, 0 trocas pendentes e 0 desativados; nenhum principal listado; auditoria vazia; trava aprovada; `ROLLBACK`; saída 0.
+- **Auditoria 10 depois do 06 (19:30 UTC):** `AUDITORIA_OK`; 04 e 06 `completo` (06: 6/6), 08 `ausente`; 11 tabelas; colunas compatíveis (`isPrincipalAdmin` e `mustChangePassword` como `extra (tolerado)`, por terem default); único gatilho em tabela existente: `users_principal_admin_guard` (habilitado); integridade toda 0.
+- **Dados preexistentes preservados:** impressões digitais da seção 15 (usuários, credenciais incluindo o hash da senha, sessões, planos, assinaturas, pagamentos, aulas) e contagens da seção 10 **idênticas** às de antes do 06 (comparação com `diff`).
+- **Registros** (em `resultados/`, não versionado; sem credenciais nem dados pessoais): `10-ensaio-20261123T1839Z-pre06.txt`, `06-ensaio-20261123T1839Z.txt`, `07-ensaio-20261123T1839Z.txt`, `10-ensaio-20261123T1839Z-pos06.txt`.
+- **Pendente no ensaio:** designação dos principais, homologação no Preview e 92 em PostgreSQL 17 (não testado).
 
 Cadastro de alunos e administradores em `/admin/usuarios`, administradores principais e troca obrigatória da senha inicial. Decisões aprovadas em 2026-11-19: campo `isPrincipalAdmin` (sem `SUPER_ADMIN`); exatamente as duas contas designadas pelo operador; aviso de pagamento anterior sem vínculo automático; gestão de papéis limitada a promover/rebaixar ADMIN comum; troca obrigatória para toda conta criada pelo painel.
 
@@ -483,7 +511,7 @@ Cadastro de alunos e administradores em `/admin/usuarios`, administradores princ
 
 1. **Banco local de teste:** aplicar o 06 e rodar o 07 — ✅ concluído em 2026-11-20. (Num banco local sem o 06, o `pnpm dev` reiniciado e os testes com banco local falham, porque o código lê colunas novas.)
 2. Designar localmente os principais de teste (`node scripts/principal-admin-operator.cjs designate --local`) e homologar no app local (roteiro abaixo).
-3. **Branch Neon de ensaio:** 06 → 07 → designação → homologação no Preview apontado para a branch.
+3. **Branch Neon de ensaio:** 06 → 07 → designação → homologação no Preview apontado para a branch. Situação em 2026-11-23: 06 e 07 concluídos; designação e Preview pendentes.
 4. **Produção:** backup (branch `backup-pre-usuarios-<AAAAMMDD-HHMM>`) → 06 → 07 → **só então** publicar o código → designar as duas contas principais (`designate`, uma por vez) → 07.
    - Publicar o código antes do 06 quebraria todo login. O código atual funciona com o 06 aplicado (colunas com default).
 
@@ -506,7 +534,7 @@ Cadastro de alunos e administradores em `/admin/usuarios`, administradores princ
 
 **Ordem de reversão: 93 antes de 92.** O 08 depende do 06; por isso o 92 aborta (`GUARD: objetos do 08 presentes — reverter o 93 antes do 92`) enquanto existir `manual_access_grants`, `manual_access_events` ou o tipo `"ManualAccessAction"`, antes de qualquer trava ou `DROP`.
 
-## 15. Liberação manual de acesso (preparado em 2026-11-22; **aplicado só no PostgreSQL local de testes**)
+## 15. Liberação manual de acesso (preparado em 2026-11-22; aplicado no PostgreSQL local de testes e na branch Neon de ensaio; produção **não migrada**)
 
 ### Histórico de execução do 08
 
@@ -515,8 +543,19 @@ Os arquivos 08/09/93 continuam reutilizáveis: o texto deles não registra execu
 | Banco | 08 | Observação |
 |---|---|---|
 | PostgreSQL local de testes (`compartilhar_auth_test@127.0.0.1`) | ✅ aplicado em 2026-11-22 | Backup pré-08 (`backup-pre-08-2026-11-22T03-20`) em `Compartilhar_Clube_Backups/`, fora do repositório. Recibo do 09 não arquivado em `resultados/` |
-| Branch Neon de ensaio | ❌ não aplicado | Exige autorização própria; o 06 precisa vir antes |
+| Branch Neon de ensaio `ensaio-04-06-08-20261123` (filha de `production`, PostgreSQL 17.12) | ✅ aplicado em 2026-11-24 (12:06 UTC); 09 aprovado | Detalhes abaixo. Aplicado depois do 04 e do 06 na mesma branch. Nenhuma concessão feita; nenhum principal designado |
 | Produção (Neon) | ❌ não aplicado | Exige autorização própria; o 06 precisa vir antes |
+
+**Execução no ensaio (2026-11-24)**, com o mesmo procedimento do 04 e do 06 (seções 12 e 14):
+- **Conexão:** endpoint direto da branch de ensaio (sem pooler; recusado se fosse o endpoint da `production`), `psql` 18.6, `sslmode=verify-full` com `sslrootcert` = `%APPDATA%/postgresql/neon-ca.pem`, TLS 1.3 (`\conninfo` no registro), `Hot Standby off`. Senha pedida pelo `psql` (oculta).
+- **Linha de base:** auditoria 10 pré-08 de 2026-11-23 22:59 UTC (`AUDITORIA_OK`; 04 e 06 `completo`, 08 `ausente` 0/5). Antes de executar, conferidos: `08-manual-access.sql` idêntico ao commit `ddcf611` (sha256 `abfd6f1a…f170`) e o 10 inalterado desde antes da linha de base (sha256 `bef4d8f3…d06d`).
+- **Portão no servidor (mesma sessão, imediatamente antes do 08; READ ONLY + ROLLBACK):** `neon.timeline_id` igual ao da branch de ensaio; `neondb`/`neondb_owner`; não réplica; PostgreSQL 17; nenhuma outra sessão; as 7 impressões digitais da seção 15 do 10 idênticas às da linha de base. `PORTAO_OK` às 12:06:57 UTC; `ON_ERROR_STOP` impediria o 08 em qualquer falha.
+- **08:** 1 tipo, 2 tabelas, 6 índices (1 único), 2 funções e 5 gatilhos criados; pós-condição interna aprovada (contagens de usuários, credenciais, sessões, planos, assinaturas e pagamentos inalteradas; concessões e auditoria vazias); `COMMIT`; saída 0.
+- **09 (12:09 UTC):** as 10 verificações de objetos `t`; nenhuma concessão nem evento; nenhuma concessão sem `GRANTED` ou para conta que não seja aluno habilitado; trava aprovada; `ROLLBACK`; saída 0.
+- **Auditoria 10 depois do 08 (12:13 UTC):** `AUDITORIA_OK`; 04, 06 e 08 `completo` (08: 5/5); 13 tabelas; novo enum `ManualAccessAction {GRANTED,RENEWED,REVOKED}`; integridade toda 0.
+- **Dados preexistentes preservados:** o `diff` entre os relatórios 10 pré-08 e pós-08 mostra **somente** os acréscimos do 08 e os horários. Impressões digitais da seção 15 (usuários, credenciais incluindo o hash da senha, sessões, planos, assinaturas, pagamentos e aulas), contagens, compatibilidade de colunas, gatilho `users_principal_admin_guard` e travas: **idênticos**.
+- **Registros** (em `resultados/`, não versionado; sem credenciais nem dados pessoais): `10-ensaio-20261123T2257Z-pre08.txt`, `08-ensaio-20261123T2257Z.txt`, `09-ensaio-20261123T2257Z.txt` e `10-ensaio-20261123T2257Z-pos08.txt`. O cabeçalho de cada um traz o horário de início, o commit, o sha256 do SQL, o endpoint e a timeline esperada.
+- **Pendente no ensaio:** homologação no Preview apontado para a branch (roteiro abaixo); `scripts/neon-account-rehearsal.cjs` (agora possível, com o 08 aplicado); 93 em PostgreSQL 17 (não testado).
 
 Administradores (comuns ou principais) liberam, renovam e revogam acesso aos conteúdos exclusivos para **alunos**, por período determinado, sem criar plano, assinatura ou pagamento. Decisões aprovadas em 2026-11-22: entidades próprias `ManualAccessGrant`/`ManualAccessEvent` (arquitetura B), qualquer ADMIN autorizado, no máximo 366 dias por concessão ou renovação, concessão permitida para quem já tem assinatura paga (com aviso), métrica separada no dashboard administrativo.
 
@@ -548,7 +587,7 @@ Uma fonte nunca altera a outra: revogar a concessão não toca a assinatura; o w
 
 1. **Banco local de teste:** aplicar o 08 e rodar o 09 — 08 ✅ aplicado em 2026-11-22. (Num banco sem o 08, o `pnpm dev` reiniciado com este código responde 503 nas áreas exclusivas para alunos **sem** assinatura paga, e os cenários de `lessons`/`student-dashboard`/`private-access`/`real-login` com banco local que chegam à verificação de acesso falham por tabela inexistente.)
 2. Homologar no app local (roteiro abaixo).
-3. **Branch Neon de ensaio:** 06 (se ainda não aplicado) → 08 → 09 → homologação no Preview. `scripts/neon-account-rehearsal.cjs` usa o guard real: rodá-lo só com o 08 aplicado na branch.
+3. **Branch Neon de ensaio:** 06 (se ainda não aplicado) → 08 → 09 → homologação no Preview. `scripts/neon-account-rehearsal.cjs` usa o guard real: rodá-lo só com o 08 aplicado na branch. Situação em 2026-11-24: 06, 08 e 09 concluídos em `ensaio-04-06-08-20261123`; Preview pendente.
 4. **Produção:** backup → 06 (se ainda não aplicado) → 08 → 09 → **só então** publicar o código → homologar.
    - Publicar o código antes do 08 faz alunos sem assinatura paga receberem 503 (os pagantes não são afetados, porque a assinatura é lida primeiro).
 

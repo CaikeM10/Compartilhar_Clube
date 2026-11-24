@@ -8,10 +8,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Plus, Edit, Archive, Eye, EyeOff, ArrowUp, ArrowDown, FileText, RotateCcw } from "lucide-react";
 import { centsToInput, formatPriceCents } from "@/lib/materials/price";
 import {
-  adminRequest, buildMaterialChange, buildMaterialInput, buildStatusChange, formatFileSize, materialErrorMessage, moveInOrder,
-  shouldReload, MaterialFormError, type MaterialFormValues,
+  adminRequest, buildMaterialChange, buildMaterialInput, buildStatusChange, coverFileError, formatFileSize, materialErrorMessage, moveInOrder,
+  pdfFileError, shouldReload, uploadCover, uploadPdf, MaterialFormError, type MaterialFormValues,
 } from "@/lib/materials/admin-client";
 import { toMaterialAdminView, type MaterialAdminView } from "@/lib/materials/types";
+import { COVER_ROUTE } from "@/lib/materials/cover-image";
 
 const statusNames = { DRAFT: "Rascunho", PUBLISHED: "Publicado", ARCHIVED: "Arquivado" };
 const BASE = "/api/admin/materials";
@@ -40,9 +41,16 @@ export function MaterialManager({ initialMaterials, coverOptions, storageConfigu
 
   const active = (materials ?? []).filter(material => material.status !== "ARCHIVED");
   const archived = (materials ?? []).filter(material => material.status === "ARCHIVED");
-  const covers = Array.from(new Set([...coverOptions, ...(materials ?? []).map(material => material.coverImage)])).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  const [uploadedCovers, setUploadedCovers] = useState<string[]>([]);
+  const covers = Array.from(new Set([...coverOptions, ...(materials ?? []).map(material => material.coverImage), ...uploadedCovers])).sort((a, b) => a.localeCompare(b, "pt-BR"));
   const editing = editor && editor !== "new" ? editor : null;
   const [cover, setCover] = useState("");
+  // Local preview of the chosen image while it is validated and stored; replaced by the stored cover on success.
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const [coverBusy, setCoverBusy] = useState(false);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [fileError, setFileError] = useState("");
+  const coverLabel = (path: string) => path.startsWith(COVER_ROUTE) ? `Imagem enviada · ${path.slice(COVER_ROUTE.length, COVER_ROUTE.length + 8)}…` : path.replace(/^\//, "");
 
   async function reload() {
     const result = await adminRequest<Parameters<typeof toMaterialAdminView>[0][]>(fetch, BASE);
@@ -75,13 +83,72 @@ export function MaterialManager({ initialMaterials, coverOptions, storageConfigu
   }
 
   function openEditor(target: MaterialAdminView | "new") {
-    setError(""); setMessage("");
+    setError(""); setMessage(""); setFileError("");
     setCover(target === "new" ? "" : target.coverImage);
+    setLocalPreview(null); setPdfFile(null);
     setEditor(target);
+  }
+
+  /** Validates and stores the image right away; the material keeps its current cover until it is saved. */
+  async function chooseCover(file: File | undefined) {
+    setFileError("");
+    if (!file) return;
+    const problem = coverFileError(file);
+    if (problem) { setFileError(problem); return; }
+    const preview = URL.createObjectURL(file);
+    setLocalPreview(preview); setCoverBusy(true);
+    try {
+      const result = await uploadCover(fetch, file);
+      if (!result.ok) { setFileError(materialErrorMessage(result.status, result.code)); return; }
+      setUploadedCovers(list => [...list, result.data.coverImage]);
+      setCover(result.data.coverImage);
+    } finally {
+      setLocalPreview(null); URL.revokeObjectURL(preview); setCoverBusy(false);
+    }
+  }
+
+  function choosePdf(file: File | undefined) {
+    setFileError("");
+    if (!file) { setPdfFile(null); return; }
+    const problem = pdfFileError(file);
+    if (problem) { setFileError(problem); setPdfFile(null); return; }
+    setPdfFile(file);
+  }
+
+  /** Saves the material fields (when there is something to save) and then, if chosen, its PDF. */
+  async function save(request: { path: string; method: "POST" | "PATCH"; body: unknown } | null, materialId: string | null, pdf: File | null) {
+    if (lock.current) return;
+    lock.current = true; setBusy(true); setError(""); setMessage("");
+    try {
+      let id = materialId;
+      if (request) {
+        const result = await adminRequest<{ id?: string }>(fetch, request.path, request.method, request.body);
+        if (!result.ok) {
+          if (shouldReload(result.status)) { setEditor(null); await reload().catch(() => undefined); }
+          setError(materialErrorMessage(result.status, result.code));
+          return;
+        }
+        id = id ?? (typeof result.data?.id === "string" ? result.data.id : null);
+      }
+      const saved = request ? (request.method === "POST" ? "Material cadastrado como rascunho." : "Material atualizado.") : "";
+      if (pdf && id) {
+        const sent = await uploadPdf(fetch, id, pdf);
+        if (!sent.ok) {
+          setEditor(null);
+          setError(`${saved ? `${saved} ` : ""}O PDF não foi associado: ${materialErrorMessage(sent.status, sent.code)}`);
+          await reload().catch(() => undefined);
+          return;
+        }
+      }
+      setEditor(null);
+      setMessage([saved, pdf ? "PDF validado e associado ao material." : ""].filter(Boolean).join(" "));
+      try { await reload(); } catch { setError("A alteração foi salva, mas a lista não foi atualizada. Use Atualizar lista."); }
+    } finally { lock.current = false; setBusy(false); }
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (coverBusy) { setError("Aguarde o envio da imagem terminar."); return; }
     const form = new FormData(event.currentTarget);
     const values: MaterialFormValues = {
       title: String(form.get("title") ?? ""), description: String(form.get("description") ?? ""), price: String(form.get("price") ?? ""),
@@ -89,10 +156,10 @@ export function MaterialManager({ initialMaterials, coverOptions, storageConfigu
       isPremium: form.get("isPremium") === "on", displayOrder: String(form.get("displayOrder") ?? ""),
     };
     try {
-      if (!editing) { void run(BASE, "POST", buildMaterialInput(values), "Material cadastrado como rascunho."); return; }
+      if (!editing) { void save({ path: BASE, method: "POST", body: buildMaterialInput(values) }, null, pdfFile); return; }
       const change = buildMaterialChange(editing, values);
-      if (!change) { setError("Nenhuma alteração para salvar."); return; }
-      void run(`${BASE}/${encodeURIComponent(editing.id)}`, "PATCH", change, "Material atualizado.");
+      if (!change && !pdfFile) { setError("Nenhuma alteração para salvar."); return; }
+      void save(change ? { path: `${BASE}/${encodeURIComponent(editing.id)}`, method: "PATCH", body: change } : null, editing.id, pdfFile);
     } catch (failure) {
       setError(failure instanceof MaterialFormError ? failure.message : "Confira os campos do formulário.");
     }
@@ -118,7 +185,7 @@ export function MaterialManager({ initialMaterials, coverOptions, storageConfigu
       {!storageConfigured && materials !== null && (
         <Card className="p-6 gap-2 border-accent/30 bg-accent/5" role="note">
           <h2 className="font-semibold text-primary">Envio de PDF indisponível</h2>
-          <p className="text-sm text-muted-foreground">O armazenamento privado de arquivos ainda não está configurado. Os materiais podem ser gerenciados normalmente; a associação de PDFs será habilitada após a configuração.</p>
+          <p className="text-sm text-muted-foreground">O armazenamento privado de arquivos ainda não está configurado. Os materiais podem ser gerenciados normalmente com as capas existentes; o envio de novas capas e de PDFs será habilitado após a configuração.</p>
         </Card>
       )}
       {materials?.length === 0 && <Card className="p-6 text-muted-foreground">Nenhum material cadastrado. Adicione o primeiro material; ele será salvo como rascunho.</Card>}
@@ -177,25 +244,40 @@ export function MaterialManager({ initialMaterials, coverOptions, storageConfigu
             <div><label htmlFor="material-price" className={fieldClass}>Preço (R$)</label><Input id="material-price" name="price" required inputMode="decimal" placeholder="4,90" pattern="^(R\$\s*)?\d{1,3}(\.\d{3})*(,\d{1,2})?$|^\d+([.,]\d{1,2})?$" title="Use o formato 4,90" defaultValue={editing ? centsToInput(editing.priceCents) : ""} disabled={busy} /></div>
             <div>
               <label htmlFor="material-cover" className={fieldClass}>Capa</label>
-              <select id="material-cover" name="coverImage" required value={cover} onChange={event => setCover(event.target.value)} disabled={busy} className={selectClass}>
+              <select id="material-cover" name="coverImage" required value={cover} onChange={event => setCover(event.target.value)} disabled={busy || coverBusy} className={selectClass}>
                 <option value="" disabled>Escolha uma imagem existente</option>
-                {covers.map(path => <option key={path} value={path}>{path.replace(/^\//, "")}</option>)}
+                {covers.map(path => <option key={path} value={path}>{coverLabel(path)}</option>)}
               </select>
-              {cover && <img src={cover} alt="Pré-visualização da capa selecionada" className="mt-2 w-full h-32 object-contain rounded-lg bg-muted" />}
+              {storageConfigured && (
+                <div className="mt-2">
+                  <label htmlFor="material-cover-upload" className="text-sm text-muted-foreground">Ou envie uma nova imagem (PNG, JPG ou WebP, até 3 MB)</label>
+                  <Input id="material-cover-upload" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy || coverBusy} onChange={event => { void chooseCover(event.target.files?.[0]); event.target.value = ""; }} />
+                </div>
+              )}
+              {coverBusy && <p role="status" className="mt-1 text-sm text-muted-foreground">Validando e enviando a imagem…</p>}
+              {(localPreview || cover) && <img src={localPreview ?? cover} alt="Pré-visualização da capa" className="mt-2 w-full h-32 object-contain rounded-lg bg-muted" />}
             </div>
             <div><label htmlFor="material-checkout" className={fieldClass}>Link de compra Hotmart (opcional)</label><Input id="material-checkout" name="checkoutUrl" type="url" maxLength={2048} placeholder="https://go.hotmart.com/…" defaultValue={editing?.checkoutUrl ?? ""} disabled={busy} /></div>
             {!editing && <div><label htmlFor="material-order" className={fieldClass}>Posição na lista</label><Input id="material-order" name="displayOrder" type="number" required min={1} step={1} defaultValue={active.length + 1} disabled={busy} /></div>}
             <div className="flex items-center gap-2"><input id="material-premium" name="isPremium" type="checkbox" defaultChecked={editing?.isPremium ?? false} disabled={busy} className="h-4 w-4 accent-primary" /><label htmlFor="material-premium" className="text-sm text-primary">Exibir selo Premium</label></div>
-            {editing && (
+            {(editing || storageConfigured) && (
               <fieldset className="space-y-2 rounded-lg border p-4">
                 <legend className="px-1 text-sm font-medium text-primary">PDF do material</legend>
-                <p className="text-sm text-muted-foreground">{pdfState(editing).label}</p>
+                {editing && <p className="text-sm text-muted-foreground">{pdfState(editing).label}</p>}
                 {!storageConfigured && <p className="text-sm text-muted-foreground">Envio de PDF indisponível: o armazenamento privado ainda não está configurado.</p>}
-                {pdfState(editing).validated && <Button type="button" variant="outline" size="sm" disabled={busy} className="rounded-full text-destructive border-destructive/30 bg-transparent" onClick={() => { const asset = pdfState(editing).validated; if (asset) { setEditor(null); setConfirm({ kind: "remove-pdf", material: editing, assetId: asset.id }); } }}>Remover PDF</Button>}
+                {storageConfigured && (
+                  <div>
+                    <label htmlFor="material-pdf" className="text-sm text-muted-foreground">{editing && pdfState(editing).validated ? "Substituir PDF (até 25 MB)" : "Enviar PDF (até 25 MB)"}</label>
+                    <Input id="material-pdf" type="file" accept="application/pdf,.pdf" disabled={busy} onChange={event => choosePdf(event.target.files?.[0])} />
+                    {pdfFile && <p className="text-xs text-muted-foreground">{pdfFile.name} · {formatFileSize(pdfFile.size)} · será validado ao salvar</p>}
+                  </div>
+                )}
+                {editing && pdfState(editing).validated && <Button type="button" variant="outline" size="sm" disabled={busy} className="rounded-full text-destructive border-destructive/30 bg-transparent" onClick={() => { const asset = pdfState(editing).validated; if (asset) { setEditor(null); setConfirm({ kind: "remove-pdf", material: editing, assetId: asset.id }); } }}>Remover PDF</Button>}
               </fieldset>
             )}
+            {fileError && <p role="alert" className="text-sm text-destructive">{fileError}</p>}
             {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-            <div className="flex flex-wrap gap-2"><Button type="submit" disabled={busy} className="bg-accent text-primary rounded-full">{busy ? "Salvando…" : "Salvar material"}</Button><Button type="button" variant="outline" disabled={busy} onClick={() => setEditor(null)}>Cancelar</Button></div>
+            <div className="flex flex-wrap gap-2"><Button type="submit" disabled={busy || coverBusy} className="bg-accent text-primary rounded-full">{busy ? (pdfFile ? "Salvando e enviando PDF…" : "Salvando…") : "Salvar material"}</Button><Button type="button" variant="outline" disabled={busy} onClick={() => setEditor(null)}>Cancelar</Button></div>
           </form>
         </DialogContent>
       </Dialog>

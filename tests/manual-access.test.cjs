@@ -185,7 +185,7 @@ test('guard: lessons and the materials library accept a student with only a vali
   const world = guardWorld({ grant: grantRow() });
   const lessons = lessonCore.createLessonService({ lesson: { findMany: async () => [] } }, world.guards);
   assert.deepEqual(await lessons.listPublished(), []);
-  const materialCore = load('lib/materials/service-core.ts', { './validation': load('lib/materials/validation.ts'), '@/lib/storage/private-storage': load('lib/storage/private-storage.ts') });
+  const materialCore = load('lib/materials/service-core.ts', { './validation': load('lib/materials/validation.ts'), '@/lib/storage/private-storage': load('lib/storage/private-storage.ts'), './cover-image': load('lib/materials/cover-image.ts') });
   const materials = materialCore.createMaterialService({ material: { findMany: async () => [{ id: 'a', title: 'A', assets: [] }] } }, world.guards);
   assert.deepEqual(await materials.listLibrary(), [{ id: 'a', title: 'A', hasPdf: false }]);
   const denied = guardWorld({ grant: grantRow({ revokedAt: NOW }) });

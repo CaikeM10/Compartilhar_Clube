@@ -213,13 +213,24 @@ test('material API routes are exactly the approved set, guarded server-side and 
   const walk = dir => fs.readdirSync(dir, { withFileTypes: true })
     .flatMap(entry => entry.isDirectory() ? walk(path.join(dir, entry.name)) : [path.join(dir, entry.name)]);
   const relative = dir => walk(path.join(root, dir)).map(file => path.relative(root, file).split(path.sep).join('/')).sort();
+  // Etapa E (approved 2026-11-24): admin cover upload and the public cover route were added explicitly.
   assert.deepEqual(relative('app/api/admin/materials'), [
     'app/api/admin/materials/[id]/pdf/route.ts', 'app/api/admin/materials/[id]/route.ts',
-    'app/api/admin/materials/order/route.ts', 'app/api/admin/materials/route.ts',
+    'app/api/admin/materials/covers/route.ts', 'app/api/admin/materials/order/route.ts', 'app/api/admin/materials/route.ts',
   ]);
-  assert.deepEqual(relative('app/api/materials'), ['app/api/materials/[id]/download/route.ts']);
+  const PUBLIC_COVERS = 'app/api/materials/covers/[file]/route.ts';
+  assert.deepEqual(relative('app/api/materials'), ['app/api/materials/[id]/download/route.ts', PUBLIC_COVERS]);
+  // The only unauthenticated material route: GET only, delegates to readCover (cover names only, never PDF keys).
+  const covers = fs.readFileSync(path.join(root, PUBLIC_COVERS), 'utf8');
+  assert.deepEqual(covers.match(/export function (?:GET|POST|PUT|PATCH|DELETE)\b/g), ['export function GET']);
+  assert.match(covers, /getMaterials\(\)\.readCover\(/);
+  assert.doesNotMatch(covers, /download|pdf\(|listLibrary|listAdmin|getAdmin/);
   for (const file of [...relative('app/api/admin/materials'), ...relative('app/api/materials')]) {
     const source = fs.readFileSync(path.join(root, file), 'utf8');
+    if (file === PUBLIC_COVERS) {
+      for (const forbidden of ['@prisma/client', 'PrismaClient', 'storageKey', 'DATABASE_URL', 'R2_', 'public/']) assert.ok(!source.includes(forbidden), `${file} must not contain ${forbidden}`);
+      continue;
+    }
     const guard = file.startsWith('app/api/admin/') ? 'await requireAdmin()' : 'await requireActiveSubscription()';
     const handlers = source.match(/export function (?:GET|POST|PUT|PATCH|DELETE)\b[\s\S]*?\n}/g) ?? [];
     assert.ok(handlers.length > 0, file);

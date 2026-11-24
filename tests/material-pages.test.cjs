@@ -158,6 +158,7 @@ test('admin writes revalidate the storefront and library only after success', as
         '@/lib/auth/authorization-core': authorization, '@/lib/lessons/service-core': { LessonError: MaterialError },
         '@/lib/lessons/http': { mutationBody: async () => { if (outcome === 'invalid') throw new MaterialError(400, 'INVALID_JSON'); return {}; } },
         '@/lib/storage/private-storage': { StorageError: MaterialError }, './service-core': { MaterialError },
+        './cover-image': load('lib/materials/cover-image.ts'),
       });
       const route = load(file, {
         '@/lib/materials/server': { getMaterials: () => ({ [operation]: async () => { if (outcome === 'conflict') throw new MaterialError(409, 'MATERIAL_CHANGED_OR_MISSING'); return { ok: true }; } }) },
