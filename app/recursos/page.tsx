@@ -4,6 +4,14 @@ import { Container } from "@/components/layout/Container";
 import { Card } from "@/components/ui/card";
 import { FileText, Download, Sparkles, Brain } from "lucide-react";
 import Link from "next/link";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { breadcrumb, pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
+  title: "Recursos para a prática profissional",
+  description: "Atividades práticas, recursos pedagógicos e materiais clínicos em PDF para professores, psicólogos e psicopedagogos aplicarem com crianças e adolescentes.",
+  path: "/recursos",
+});
 
 export default function RecursosPage() {
   const recursos = [
@@ -26,6 +34,7 @@ export default function RecursosPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <JsonLd data={breadcrumb([{ name: "Início", path: "/" }, { name: "Recursos", path: "/recursos" }])} />
       <Header />
 
       <main className="flex-1">

@@ -125,6 +125,8 @@ test('library page: empty state and errors are not hidden', async () => {
   assert.match(fs.readFileSync(path.join(root, 'app/aluno/recursos/error.tsx'), 'utf8'), /Biblioteca temporariamente indisponível/);
 });
 
+const seo = load('lib/seo.ts', require);
+
 test('public page: no authentication, ISR with on-demand revalidation, renders only what the data layer returns', async () => {
   const source = fs.readFileSync(path.join(root, 'app/materiais/page.tsx'), 'utf8');
   assert.doesNotMatch(source, /["']use client["']|@\/lib\/auth|requirePageAccess|cookies\(|headers\(/);
@@ -134,11 +136,21 @@ test('public page: no authentication, ISR with on-demand revalidation, renders o
     '@/components/materials/MaterialCard': { MaterialCard: props => React.createElement('article', null, `${props.title}|${props.price}|${props.checkoutUrl}`) },
     'lucide-react': ui['lucide-react'],
     '@/lib/materials/pages': { getPublicCatalog: async () => [{ id: 'a', title: 'Só publicado', price: 'R$ 1,00', checkoutUrl: 'https://go.hotmart.com/Z', image: '/a.webp', isPremium: false }] },
+    // SEO (feat/seo-optimization): metadados e JSON-LD reais.
+    '@/lib/seo': seo, '@/components/seo/JsonLd': load('components/seo/JsonLd.tsx', n => n === '@/lib/seo' ? seo : require(n)),
   })[name] ?? (name === 'react/jsx-runtime' ? require(name) : assert.fail(`unexpected import ${name}`));
   const module = load('app/materiais/page.tsx', visual);
   assert.equal(module.revalidate, 300);
   const html = renderToStaticMarkup(await module.default());
   assert.equal((html.match(/<article>/g) ?? []).length, 1);
+  // Dados estruturados: só o que o cartão mostra (nome, capa pública, preço, link de compra); nada privado.
+  const ld = [...html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g)].map(m => JSON.parse(m[1]));
+  const list = ld.find(item => item['@type'] === 'ItemList');
+  assert.deepEqual(list.itemListElement.map(e => [e.item.name, e.item.image, e.item.offers.price, e.item.offers.priceCurrency, e.item.offers.url]),
+    [['Só publicado', 'https://www.compartilharclube.com.br/a.webp', '1.00', 'BRL', 'https://go.hotmart.com/Z']]);
+  assert.ok(ld.some(item => item['@type'] === 'BreadcrumbList'));
+  assert.doesNotMatch(html, /download|\.pdf|storageKey|X-Amz|Signature=/i);
+  assert.equal(module.metadata.alternates.canonical, '/materiais');
   assert.match(html, /Só publicado\|R\$ 1,00\|https:\/\/go\.hotmart\.com\/Z/);
   assert.match(fs.readFileSync(path.join(root, 'app/materiais/error.tsx'), 'utf8'), /Catálogo temporariamente indisponível/);
 });

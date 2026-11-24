@@ -19,6 +19,8 @@ function loadSource(source, imports = require) {
   const m = { exports: {} }; new Function('require', 'module', 'exports', code)(imports, m, m.exports); return m.exports;
 }
 const load = (file, imports = require) => loadSource(fs.readFileSync(path.join(root, file), 'utf8'), imports);
+const seo = load('lib/seo.ts');
+const withoutJsonLd = html => html.replace(/<script type="application\/ld\+json">.*?<\/script>/g, '');
 
 test('all 15 commercial products retain exact values, optional properties, order and public markup', async () => {
   assert.equal(materials.length, 15);
@@ -46,7 +48,9 @@ ${baseline.publicMarkup}`, publicImports(pagesWith(disabledMaterials))).default;
   const seeded = { getMaterials: () => ({ listPublished: async () => initialRecords() }) };
   for (const server of [disabledMaterials, seeded]) {
     const Page = load('app/materiais/page.tsx', publicImports(pagesWith(server))).default;
-    assert.equal(renderToStaticMarkup(await Page()), expected);
+    // SEO (feat/seo-optimization, aprovado em 2026-11-24): a página passou a emitir JSON-LD (BreadcrumbList e ItemList)
+    // em <script type="application/ld+json">, invisível. A equivalência com o JSX aprovado continua exata sem esses scripts.
+    assert.equal(withoutJsonLd(renderToStaticMarkup(await Page())), expected);
   }
   // Expected effect after the production import: listPublished() returns only PUBLISHED rows, so the storefront shows
   // 14 cards and material-initial-014 (no Hotmart link, imported as DRAFT) disappears until an admin adds its link.
@@ -115,6 +119,8 @@ function publicImports(pages) {
     if (name === '@/components/layout/Container') return { Container: ({ children }) => React.createElement('div', { className: 'container' }, children) };
     if (name === '@/components/materials/MaterialCard') return load('components/materials/MaterialCard.tsx', visual);
     if (name === '@/lib/materials/pages') return pages;
+    if (name === '@/lib/seo') return seo;
+    if (name === '@/components/seo/JsonLd') return load('components/seo/JsonLd.tsx', n => n === '@/lib/seo' ? seo : require(n));
     return visual(name);
   };
 }

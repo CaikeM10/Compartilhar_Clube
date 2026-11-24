@@ -16,7 +16,7 @@ export function Header() {
           <Link href="/" className="flex items-center gap-4">
             <div className="flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-full bg-white shadow-md border border-border/40 overflow-hidden">
               <img
-                src="/logoo.webp"
+                src="/logoo-256.webp"
                 alt="Compartilhar Clube"
                 className="w-full h-full object-cover"
               />

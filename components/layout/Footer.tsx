@@ -11,7 +11,7 @@ export function Footer() {
             <div className="flex items-center gap-3 mb-4">
               {/* Logo igual ao header */}
               <img
-                src="/logoo.webp"
+                src="/logoo-256.webp"
                 alt="Compartilhar Clube"
                 className="h-13 w-auto rounded-lg"
               />
