@@ -23,7 +23,7 @@ Plataforma de assinatura para educadores/psicólogos com:
 | Deploy | Vercel (`@vercel/analytics`) |
 | Gerenciador | pnpm 10.20.0 (existe também `package-lock.json` legado) |
 
-Alias de import: `@/*` → raiz. `next.config.js` só define `allowedDevOrigins`. Não há `middleware.ts`/`proxy.ts`.
+Alias de import: `@/*` → raiz. `next.config.js` define `allowedDevOrigins` e `headers()` (`X-Robots-Tag: noindex, follow` em `/admin`, `/aluno`, `/conta`, `/checkout`, `/login`, `/recuperar-senha`). Não há `middleware.ts`/`proxy.ts`.
 
 ## 3. Estrutura de diretórios
 
@@ -68,6 +68,15 @@ Legados (não usar em código novo): `services/api.ts` (mock), `hooks/useResourc
 - TypeScript strict; sem `any` novo.
 - Componentes de domínio em PascalCase; `components/ui` em kebab-case.
 - Reutilizar componentes shadcn existentes e as cores da marca (#2f4a70, #e1b12c, #4a6278, #b55239; fontes Inter/Poppins).
+
+### SEO (feat/seo-optimization)
+- Domínio canônico: `https://www.compartilharclube.com.br` (`SITE_URL` em `lib/seo.ts`; `metadataBase` no `app/layout.tsx`, título padrão com modelo `%s | Compartilhar Clube`). Posicionamento: Psicologia, Educação e Inclusão.
+- Página pública nova: `export const metadata = pageMetadata({ title, description, path })` (título exclusivo ≤ 60 com sufixo, descrição 110–160, canônico, Open Graph e Twitter completos com `OG_IMAGE`). Client Component: metadados num `layout.tsx` da rota (ex.: `app/contato/layout.tsx`). Incluir no `app/sitemap.ts`.
+- Página privada/transacional: `robots: NO_INDEX` e o caminho em `next.config.js` (`X-Robots-Tag`). **Não** bloquear no `app/robots.ts` (impediria o buscador de ler o noindex); o robots.txt só bloqueia `/api/`, liberando `/api/materials/covers/`.
+- Imagem de compartilhamento: `app/opengraph-image.tsx` (`next/og`, PNG estático no build, 1200×630) com `assets/og/*` (derivados reduzidos do logo oficial) e `assets/fonts/Poppins-*.ttf` (OFL). Não usar URL assinada nem R2.
+- JSON-LD via `components/seo/JsonLd.tsx` (Server Component, `jsonLd()` escapa `<`): home (`Organization`, `WebSite`, `Person` só com dados visíveis, `WebPage`), `/materiais` (`ItemList` de `Product`/`Offer` com o que o cartão mostra) e `BreadcrumbList` nas internas. Nunca dados inventados (avaliações, alunos, credenciais).
+- Logo do cabeçalho/rodapé: `public/logoo-256.webp` (derivado de `logoo.webp`, 9763 px). `MemberLayout` e a tela de login ainda usam o original (arquivos travados por teste). Topo da home: animação `hero-fade-up` em CSS (respeita `prefers-reduced-motion`), sem esperar hidratação.
+- Monitoramento: Vercel Web Analytics e Speed Insights (`@vercel/speed-insights`, plano gratuito: 10.000 eventos em 30 dias por equipe; ao exceder, a coleta pausa, sem cobrança). Sem GA4/Clarity (exigiriam consentimento LGPD).
 
 ## 5. Autenticação e autorização
 

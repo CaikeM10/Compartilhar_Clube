@@ -4,6 +4,44 @@ import { MaterialCard } from "@/components/materials/MaterialCard";
 import { ArrowLeft } from "lucide-react";
 
 import { getPublicCatalog } from "@/lib/materials/pages";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { SITE_URL, breadcrumb, pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
+  title: "Materiais pedagógicos e terapêuticos",
+  description: "Jogos, atividades de leitura e recursos socioemocionais em PDF, prontos para aplicar com crianças e adolescentes na escola, no consultório e em intervenções.",
+  path: "/materiais",
+});
+
+/** "R$ 1.234,90" -> "1234.90" (preço já exibido no cartão); null se não houver preço legível. */
+function offerPrice(price: string) {
+  const match = /^R\$\s*([\d.]+),(\d{2})$/.exec(price.trim());
+  return match ? `${match[1].replace(/\./g, "")}.${match[2]}` : null;
+}
+
+/** Somente o que está visível nos cartões: nome, capa pública, preço e link de compra. Nunca PDFs nem dados de assinantes. */
+function catalogStructuredData(materials: Awaited<ReturnType<typeof getPublicCatalog>>) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: "Materiais individuais do Compartilhar Clube",
+    itemListElement: materials.map((item, index) => {
+      const price = offerPrice(item.price);
+      return {
+        "@type": "ListItem",
+        position: index + 1,
+        item: {
+          "@type": "Product",
+          name: item.title,
+          image: new URL(encodeURI(item.image), SITE_URL).href,
+          ...(price && item.checkoutUrl
+            ? { offers: { "@type": "Offer", price, priceCurrency: "BRL", url: item.checkoutUrl, availability: "https://schema.org/InStock" } }
+            : {}),
+        },
+      };
+    }),
+  };
+}
 
 // Statically cached; refreshed on demand by admin writes (revalidateMaterialPages) and at most every 5 minutes.
 export const revalidate = 300;
@@ -12,6 +50,8 @@ export default async function MateriaisPage() {
   const materials = await getPublicCatalog();
   return (
     <Container>
+      <JsonLd data={breadcrumb([{ name: "Início", path: "/" }, { name: "Materiais", path: "/materiais" }])} />
+      {materials.length > 0 && <JsonLd data={catalogStructuredData(materials)} />}
       <div className="py-20 space-y-16">
         {/* VOLTAR */}
         <div className="flex justify-center">

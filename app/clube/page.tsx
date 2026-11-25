@@ -5,6 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Check, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { breadcrumb, pageMetadata } from "@/lib/seo";
+
+export const metadata = pageMetadata({
+  title: "Clube de assinatura para profissionais",
+  description: "Aulas gravadas, supervisões de caso e todos os recursos em PDF: conheça os planos do Compartilhar Clube para profissionais de Psicologia, Educação e Inclusão.",
+  path: "/clube",
+});
 
 export default function ClubePage() {
   const benefits = [
@@ -20,6 +28,7 @@ export default function ClubePage() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <JsonLd data={breadcrumb([{ name: "Início", path: "/" }, { name: "Clube de assinatura", path: "/clube" }])} />
       <Header />
 
       <main className="flex-1">

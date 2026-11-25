@@ -10,20 +10,44 @@ import { Video, FileText, MessagesSquare, Check, Brain } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { HomeMaterialsCarousel } from "@/components/materials/HomeMaterialsCarousel";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_NAME, SITE_URL, pageMetadata } from "@/lib/seo";
 
 // Statically cached; the carousel is refreshed on demand by admin writes (revalidateMaterialPages) and at most every 5 minutes.
 export const revalidate = 300;
 
+export const metadata = pageMetadata({ title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION, path: "/", absoluteTitle: true });
+
+// Somente informações visíveis nesta página (apresentação do Wesley e contatos do rodapé/contato).
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization", "@id": `${SITE_URL}/#organizacao`, name: SITE_NAME, url: SITE_URL,
+      logo: `${SITE_URL}/logo-compartilhar-clube-512.png`, email: "contato@compartilharclube.com.br",
+      sameAs: ["https://www.instagram.com/compartilharclube"],
+    },
+    { "@type": "WebSite", "@id": `${SITE_URL}/#site`, name: SITE_NAME, url: SITE_URL, inLanguage: "pt-BR", publisher: { "@id": `${SITE_URL}/#organizacao` } },
+    {
+      "@type": "Person", "@id": `${SITE_URL}/#wesley-marques`, name: "Wesley Marques", image: `${SITE_URL}/imagem_principal.webp`,
+      jobTitle: ["Pedagogo", "Psicólogo (CRP 11/23403)", "Psicopedagogo Institucional e Clínico"],
+      description: "Pedagogo, psicólogo (CRP 11/23403) e psicopedagogo institucional e clínico; especialista em Educação Inclusiva e mestrando em Educação Inclusiva pelo IFCE.",
+    },
+    { "@type": "WebPage", "@id": `${SITE_URL}/#pagina`, url: SITE_URL, name: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION, inLanguage: "pt-BR", isPartOf: { "@id": `${SITE_URL}/#site` }, about: { "@id": `${SITE_URL}/#organizacao` } },
+  ],
+};
+
 export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col">
+      <JsonLd data={structuredData} />
       <Header />
 
       <section className="bg-gradient-to-br from-primary via-primary to-secondary py-20 md:py-32">
         <Container>
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            {/* Left Side - CTA Content */}
-            <ScrollAnimation animation="fade-up">
+            {/* Left Side - CTA Content (entrada em CSS, sem esperar o JavaScript) */}
+            <div className="hero-fade-up">
               <div className="text-white text-center md:text-left">
                 {/* Logo */}
                 <div className="mb-10 flex justify-center md:justify-start">
@@ -33,6 +57,7 @@ export default function HomePage() {
                       alt="Compartilhar Clube"
                       fill
                       className="object-contain drop-shadow-lg"
+                      sizes="144px"
                       priority
                     />
                   </div>
@@ -68,10 +93,10 @@ export default function HomePage() {
                   </Button>
                 </div>
               </div>
-            </ScrollAnimation>
+            </div>
 
             {/* RIGHT IMAGE */}
-            <ScrollAnimation animation="fade-up" delay={200}>
+            <div className="hero-fade-up hero-delay-200">
               <div className="relative flex flex-col items-center">
                 {/* GLOW */}
                 <div className="absolute inset-0 flex items-center justify-center -z-10">
@@ -84,6 +109,7 @@ export default function HomePage() {
                     src="/imagem_principal.webp"
                     alt="Psicólogo Wesley Marques"
                     fill
+                    sizes="(min-width: 768px) 384px, calc(100vw - 2rem)"
                     priority
                     className="object-cover"
                   />
@@ -105,7 +131,7 @@ export default function HomePage() {
                   </Button>
                 </div>
               </div>
-            </ScrollAnimation>
+            </div>
           </div>
         </Container>
       </section>

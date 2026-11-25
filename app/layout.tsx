@@ -2,8 +2,10 @@ import type React from "react";
 import type { Metadata } from "next";
 import { Inter, Poppins } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const poppins = Poppins({
@@ -12,37 +14,26 @@ const poppins = Poppins({
   variable: "--font-poppins",
 });
 
+// Padrão herdado por todas as rotas. Páginas públicas definem título, descrição e canônico próprios (lib/seo.ts);
+// páginas privadas recebem noindex. A imagem de compartilhamento vem de app/opengraph-image.tsx.
 export const metadata: Metadata = {
-  title: "Compartilhar Clube | Comunidade de Aprendizagem e Formação",
-  description:
-    "Espaço de conexão, aprendizado coletivo e formação continuada para professores, psicólogos, psicopedagogos e profissionais da educação.",
-
+  metadataBase: new URL(SITE_URL),
+  title: { default: DEFAULT_TITLE, template: `%s | ${SITE_NAME}` },
+  description: DEFAULT_DESCRIPTION,
+  applicationName: SITE_NAME,
   icons: {
     icon: "/favicon.png",
-    shortcut: "/icon.png",
     apple: "/apple-icon.png",
   },
-
   openGraph: {
-    title: "Compartilhar Clube",
-    description:
-      "Comunidade de aprendizagem e formação continuada para profissionais da educação.",
-    url: "https://compartilharclube.com.br",
-    siteName: "Compartilhar Clube",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "Compartilhar Clube",
-      },
-    ],
-    locale: "pt_BR",
     type: "website",
+    locale: "pt_BR",
+    siteName: SITE_NAME,
+    url: "/",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
   },
-
-  metadataBase: new URL("https://compartilharclube.com.br"),
-  generator: "v0.pp",
+  twitter: { card: "summary_large_image", title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION },
 };
 
 export default function RootLayout({
@@ -58,6 +49,7 @@ export default function RootLayout({
       >
         <AuthProvider>{children}</AuthProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
